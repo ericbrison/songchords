@@ -94,10 +94,19 @@ main {
     margin-top: 0.6rem;
 }
 
+.song-render-inside {
+    width: 9.5cm;
+    border-right: 2px dashed grey;
+}
+
 
 .page-break {
     width: 50%;
     border: dashed 2px grey;
+}
+
+.page-footer {
+    text-align: right;
 }
 
 
@@ -114,14 +123,21 @@ main {
         break-after: column;
     }
 
-    
-
     header,
     .song-write {
         display: none;
     }
 
-    .song-render>div {
+
+    .song-render-inside {
+        width: unset;
+        border: none;
         column-count: 2;
+    }
+
+    .page-footer {
+        position: fixed;
+        bottom: 0;
+        right: 1rem;
     }
 }

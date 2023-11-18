@@ -70,14 +70,19 @@ function writeLineText(line) {
     if (line.trim().match(/^---+$/)) {
         p = document.createElement('hr');
     } else {
-
         if (line.trim().match(/^===+$/)) {
             p = document.createElement('hr');
             p.classList.add("page-break");
-        } else
-        p.textContent = line;
-    }
+        } else {
+            if (line.trim().match(/^>/)) {
+                p.classList.add("page-footer");
+            }
+            p.textContent = line;
+           
+        }
 
+
+    } 
     p.classList.add("solo-text");
     songRender.appendChild(p);
 }
@@ -159,7 +164,7 @@ function renderSong(song) {
                     writeMergeChordLine(previousLineChord, line);
                     previousLineChord = '';
                 } else {
-                    
+
                     writeLineText(line);
                 }
             }
