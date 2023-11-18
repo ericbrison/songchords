@@ -1,0 +1,127 @@
+:root {
+    --text-font-size: 12;
+    --chord-font-size: 12;
+    --chord-color: green;
+    --text-color: green;
+
+}
+
+body {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+
+}
+
+header {
+    padding: 0.5rem;
+}
+
+main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+
+
+.song-write {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 0.5rem;
+}
+
+.song-write textarea {
+    outline: dashed 2px rgb(89, 0, 255);
+    flex: 1;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: scroll;
+}
+
+
+.song-render {
+    flex: 1;
+    font-family: sans;
+    font-size: var(--text-font-size);
+    font-weight: bold;
+    overflow-y: auto;
+    width: 100%;
+    position: relative;
+}
+
+.song-render .capo {
+    text-align: center;
+}
+
+.song-render ins {
+    width: 0.5rem;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.song-render p {
+    margin: 0 0 0.6rem 0;
+    white-space: nowrap;
+}
+
+.song-render .song-text {
+    padding-top: var(--chord-font-size);
+}
+
+.song-render .song-text>span {
+    color: var(--chord-color);
+    position: absolute;
+    transform: translate(0, calc(var(--chord-font-size) * -1));
+    font-size: var(--chord-font-size);
+}
+
+
+.song-render .solo-chord {
+    color: var(--chord-color);
+    margin-bottom: 0;
+    font-size: var(--chord-font-size);
+}
+
+
+.song-render .solo-text {
+    color: var(--text-color);
+}
+
+.song-render .solo-chord+.song-text {
+    margin-top: 0.6rem;
+}
+
+
+.page-break {
+    width: 50%;
+    border: dashed 2px grey;
+}
+
+
+@media print {
+
+
+    .song-render,
+    main {
+        overflow: visible;
+    }
+
+    .page-break {
+        visibility: hidden;
+        break-after: column;
+    }
+
+    
+
+    header,
+    .song-write {
+        display: none;
+    }
+
+    .song-render>div {
+        column-count: 2;
+    }
+}

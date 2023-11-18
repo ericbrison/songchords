@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <title>Song Chords</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="songchords.css">
+</head>
+
+<body>
+    <header>
+        <label for="capo">Capo</label>
+        <input id="capo" type="number" min="0" max="11">
+        <label for="textfontsize">text font size (px)</label>
+        <input id="textfontsize" type="number" min="0" max="100">
+        <label for="chordfontsize">Chord font size (px)</label>
+        <input id="chordfontsize" type="number" min="0" max="100">
+        <label for="chordcolor">Font color</label>
+        <input id="chordcolor" type="color">
+        <label for="textcolor">Text color</label>
+        <input id="textcolor" type="color">
+    </header>
+    <main>
+        <section class="song-write">
+            <textarea id="chord-area"></textarea>
+        </section>
+        <section class="song-render">
+            <div id="chord-render"></div>
+        </section>
+    </main>
+
+</body>
+
+<script type="text/javascript" src="songchords.js"></script>
+
+</html>
