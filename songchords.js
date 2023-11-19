@@ -6,6 +6,8 @@ const chordFontSizeInput = document.getElementById("chordfontsize");
 const chordColorInput = document.getElementById("chordcolor");
 const textColorInput = document.getElementById("textcolor");
 const columnInput = document.getElementById("columncount");
+const notationInput = document.getElementById("notation");
+const printButton = document.getElementById("print");
 
 if (!chordArea) {
     console.error("No textarea");
@@ -45,8 +47,13 @@ function noteTranspose(note, capoValue) {
     if (index === -1) {
         index = gammeD.findIndex((v) => v === note);
     }
-    const gLength = gammeB.length;
-    const tNote = gammeB[(index - capoValue + gLength) % gLength];
+
+    let gamme = gammeB;
+    if (notationInput.value === '#') {
+        gamme = gammeD;
+    }
+    const gLength = gamme.length;
+    const tNote = gamme[(index - capoValue + gLength) % gLength];
     console.log("transpose", note, tNote)
 
     return tNote;
@@ -79,11 +86,11 @@ function writeLineText(line) {
                 p.classList.add("page-footer");
             }
             p.textContent = line;
-           
+
         }
 
 
-    } 
+    }
     p.classList.add("solo-text");
     songRender.appendChild(p);
 }
@@ -156,7 +163,8 @@ function renderSong(song) {
                 if (previousLineChord) {
                     writeLineChord(previousLineChord);
                 }
-                if (capoInput.value) {
+                if (capoInput.value > 0 || notationInput.value !== "") {
+                    console.log("You Transpose", capoInput.value, notationInput.value);
                     line = lineTranspose(line);
                 }
                 previousLineChord = line;
@@ -218,6 +226,32 @@ function updateStyle() {
 
 }
 
+
+
+
+// ---------------------------------
+// Init parameters from localStorage
+// ---------------------------------
+
+chordArea.value = getStorage("songchord");
+capoInput.value = getStorage("capo");
+textFontSizeInput.value = getStorage("textfontsize") || 12;
+chordFontSizeInput.value = getStorage("chordfontsize") || 12;
+chordColorInput.value = getStorage("chordcolor") || '#188B18';
+textColorInput.value = getStorage("textcolor") || '#23239F';
+columnInput.value = getStorage("column") || 1;
+notationInput.value = getStorage("notation") || '';
+
+// -------------------
+// Event Listeners
+// -------------------
+
+printButton.addEventListener("click", function (ev) {
+    console.log("PRNT");
+    window.print();
+
+});
+
 chordArea.addEventListener("input", function (ev) {
     const v = this.value;
     recordStorage("songchord", v);
@@ -225,15 +259,24 @@ chordArea.addEventListener("input", function (ev) {
 
 });
 
-
 capoInput.addEventListener("change", function (ev) {
 
     recordStorage("capo", this.value);
+
+    if (this.value > 0) {
+        if (notationInput.value === "") {
+            notationInput.value = "b";
+        }
+        notationInput.options[0].disabled = true;
+    } else {
+        notationInput.options[0].disabled = false;
+    }
+
     renderSong(chordArea.value);
 
+
+
 });
-
-
 textFontSizeInput.addEventListener("change", function (ev) {
     recordStorage("textfontsize", this.value);
     renderSong(chordArea.value);
@@ -254,12 +297,9 @@ columnInput.addEventListener("change", function (ev) {
     recordStorage("column", this.value);
     updateStyle();
 });
+notationInput.addEventListener("change", function (ev) {
+    recordStorage("notation", this.value);
+    renderSong(chordArea.value);
+});
 
-chordArea.value = getStorage("songchord");
-capoInput.value = getStorage("capo");
-textFontSizeInput.value = getStorage("textfontsize") || 12;
-chordFontSizeInput.value = getStorage("chordfontsize") || 12;
-chordColorInput.value = getStorage("chordcolor") || '#00ff00';
-textColorInput.value = getStorage("textcolor") || '#0000ff';
-columnInput.value = getStorage("column") || 1;
 renderSong(chordArea.value);
