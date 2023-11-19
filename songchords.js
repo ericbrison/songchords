@@ -241,14 +241,37 @@ function updateStyle() {
 
 }
 
+const favoriteSong=`Famous song by Me
+---------------
 
+[Intro]
+C Am C Am
+ 
+
+[Chorus]
+     F        Am             
+It's a famous song
+ F7       Db 
+It's incredible...
+   
+Here a page/column break
+===
+
+[Verse]
+     F        Am         Dsus4/G      F#
+All my life, I wanted to be an artist 
+F7       Db 
+It's incredible...
+
+> Page footer for my song
+`;
 
 
 // ---------------------------------
 // Init parameters from localStorage
 // ---------------------------------
 
-chordArea.value = getStorage("songchord");
+chordArea.value = getStorage("songchord") || favoriteSong;
 capoInput.value = getStorage("capo");
 textFontSizeInput.value = getStorage("textfontsize") || 12;
 chordFontSizeInput.value = getStorage("chordfontsize") || 12;
