@@ -77,10 +77,14 @@ function writeLineChord(line) {
     p.textContent = renderChord(line);
     songRender.appendChild(p);
 }
-function writeLineText(line) {
+function writeLineText(line, isSong) {
     let p = document.createElement('p');
+    let isLineSong = false;
 
-    if (line.trim().match(/^---+$/)) {
+
+    if (line.trim() === "") {
+        p = document.createElement('br');
+    } else if (line.trim().match(/^---+$/)) {
         p = document.createElement('hr');
     } else {
         if (line.trim().match(/^===+$/)) {
@@ -89,15 +93,20 @@ function writeLineText(line) {
         } else {
             if (line.trim().match(/^>/)) {
                 p.classList.add("page-footer");
+            } else {
+                isLineSong = true;
             }
             p.textContent = line;
 
         }
-
-
     }
-    p.classList.add("solo-text");
+    if (isSong && isLineSong) {
+        p.classList.add("follow-song");
+    } else {
+        p.classList.add("solo-text");
+    }
     songRender.appendChild(p);
+    return isLineSong && isSong;
 }
 
 
@@ -149,6 +158,7 @@ function writeMergeChordLine(chordLine, songText) {
 function renderSong(song) {
     const lines = song.split('\n');
     let previousLineChord = '';
+    let previousLineSong = false;
     songRender.textContent = '';
     let capoIsWrote = false;
 
@@ -174,9 +184,10 @@ function renderSong(song) {
                 if (previousLineChord) {
                     writeMergeChordLine(previousLineChord, line);
                     previousLineChord = '';
+                    previousLineSong = true;
                 } else {
 
-                    writeLineText(line);
+                    previousLineSong = writeLineText(line, previousLineSong);
                 }
             }
         } else {
@@ -184,7 +195,8 @@ function renderSong(song) {
                 writeLineChord(previousLineChord);
                 previousLineChord = '';
             }
-            writeLineText('');
+            writeLineText('', previousLineSong);
+            previousLineSong = false;
         }
     });
 }
