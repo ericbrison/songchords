@@ -32,13 +32,10 @@ function lineTranspose(line) {
         return noteTranspose(s, capoValue);
     });
     const tChordsBB = tChords.replaceAll(/(~ ?)/gu, function (s) {
-        console.log("XX", s, noteTranspose(s[0], 2));
         return "";
     });
-    console.log("YY LINE", tChordsBB);
     const tChordsCC = tChordsBB.replaceAll(/([^ ]+%[^ ]*)/gu, function (s) {
-        console.log("YY", s);
-        return s.replace("%","")+" ";
+        return s.replace("%", "") + " ";
     })
     return tChordsCC;
 }
@@ -57,7 +54,6 @@ function noteTranspose(note, capoValue) {
     }
     const gLength = gamme.length;
     let tNote = gamme[(index - capoValue + gLength) % gLength];
-    console.log("transpose", note, tNote)
     if (note.length === 2 && tNote.length === 1) {
         tNote += "%";
     }
@@ -128,7 +124,6 @@ function writeMergeChordLine(chordLine, songText) {
     let idxChord = 0;
     let songLine = '';
     for (let i = 0; i < lineLenght; i++) {
-        //console.log("song", i, chordLine[i], songText[i]);
         if (chordLine[i] && chordLine[i] !== ' ' && idxChord <= i) {
             idxChord = i;
             songLine += '<span>';
@@ -162,7 +157,6 @@ function renderSong(song) {
 
     lines.forEach((line, idx) => {
         if (line.trim().length > 0) {
-            //console.log("line", idx, isChordLine(line), line);
             if (isChordLine(line)) {
                 if (!capoIsWrote && capoInput.value > 0) {
                     writeCapo(capoInput.value);
@@ -173,7 +167,6 @@ function renderSong(song) {
                     writeLineChord(previousLineChord);
                 }
                 if (capoInput.value > 0 || notationInput.value !== "") {
-                    console.log("You Transpose", capoInput.value, notationInput.value);
                     line = lineTranspose(line);
                 }
                 previousLineChord = line;
@@ -222,7 +215,7 @@ function updateStyle() {
     const r = document.querySelector(':root');
 
     const textSize = textFontSizeInput.value;
-    const chordSize = chordFontSizeInput.value;
+    const chordSize = parseInt(textSize) + parseInt(chordFontSizeInput.value);
     const chordColor = chordColorInput.value;
     const textColor = textColorInput.value;
     const columnCount = columnInput.value;
@@ -241,7 +234,7 @@ function updateStyle() {
 
 }
 
-const favoriteSong=`Famous song by Me
+const favoriteSong = `Famous song by Me
 ---------------
 
 [Intro]
@@ -274,7 +267,7 @@ It's incredible...
 chordArea.value = getStorage("songchord") || favoriteSong;
 capoInput.value = getStorage("capo");
 textFontSizeInput.value = getStorage("textfontsize") || 12;
-chordFontSizeInput.value = getStorage("chordfontsize") || 12;
+chordFontSizeInput.value = getStorage("chordfontsize") || 0;
 chordColorInput.value = getStorage("chordcolor") || '#188B18';
 textColorInput.value = getStorage("textcolor") || '#23239F';
 columnInput.value = getStorage("column") || 1;
@@ -285,7 +278,6 @@ notationInput.value = getStorage("notation") || '';
 // -------------------
 
 printButton.addEventListener("click", function (ev) {
-    console.log("PRNT");
     window.print();
 
 });
