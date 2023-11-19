@@ -34,6 +34,7 @@ header label {
     border-radius: 4px;
     padding-left: 4px;
 }
+
 header label:hover {
     cursor: pointer;
     outline: solid 2px cadetblue;
@@ -52,15 +53,16 @@ header .button {
     flex: 1;
     text-align: right;
 }
+
 header button {
     height: 1.5rem;
 }
 
 
 header select {
-height: 1.5rem;
-width: 3rem;
-padding: 3px;
+    height: 1.5rem;
+    width: 3rem;
+    padding: 3px;
 }
 
 main {
@@ -89,7 +91,7 @@ main {
 
 
 .song-render {
-    flex: 1;
+    flex: var(--column-count);
     font-family: sans;
     font-size: var(--text-font-size);
     font-weight: bold;
@@ -105,14 +107,14 @@ main {
 }
 
 .song-render ins {
-    width: 0.5rem;
+    width: 0.6rem;
     display: inline-block;
     text-decoration: none;
 }
 
 .song-render p {
     margin: 0 0 0.6rem 0;
-    white-space: nowrap;
+    white-space: pre;
 }
 
 .song-render .song-text {
@@ -131,6 +133,8 @@ main {
     color: var(--chord-color);
     margin-bottom: 0;
     font-size: var(--chord-font-size);
+
+    font-family: monospace;
 }
 
 
@@ -143,29 +147,37 @@ main {
 }
 
 .song-render {
-    width: calc(19cm / var(--column-count));
-    border-right: 2px dashed grey;
+    width: 20cm;
 }
 
 
-.song-render-inside {
+.song-render-inside.column {
     column-count: var(--column-count);
+    column-fill: balance;
     column-rule: dashed 2px rgb(118, 118, 125);
+    width: fit-content;
+}
+
+.song-render-inside.column .page-break {
+    break-after: column;
 }
 
 .page-break {
     width: 50%;
     border: dashed 2px grey;
-    break-after: column;
     border-color: sandybrown;
+    break-after: page;
 }
+
 
 
 .page-footer {
     text-align: right;
 }
 
-
+@page {
+    margin: 1.5cm;
+}
 
 @media print {
 
@@ -177,7 +189,6 @@ main {
 
     .page-break {
         visibility: hidden;
-        break-after: column;
     }
 
     header,
@@ -189,11 +200,21 @@ main {
     .song-render-inside {
         width: unset;
         border: none;
-        column-count: var(--column-count);
     }
 
+    .song-render-inside.column {
+        column-count: var(--column-count);
+        column-rule: solid 1px rgb(118, 118, 125);
+        border: none;
+        width: unset;
+    }
+
+
     .song-render {
+        width: auto;
+        min-width: unset;
         padding-top: 0;
+        border-right: none;
     }
 
     .page-footer {

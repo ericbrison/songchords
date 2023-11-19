@@ -18,7 +18,7 @@ if (!songRender) {
 
 function renderChord(line) {
 
-    const chord = line.replace("b", "♭").replace("#", "♯");
+    const chord = line.replaceAll("b", "♭").replaceAll("#", "♯");
 
 
 
@@ -27,17 +27,20 @@ function renderChord(line) {
 
 function lineTranspose(line) {
     const capoValue = parseInt(capoInput.value);
-    const rawLine = line.replaceAll("♭", "b").replace("♯", "#");
-    console.log("RAW", rawLine);
+    const rawLine = line.replaceAll("♭", "b").replaceAll("♯", "#");
     const tChords = rawLine.replaceAll(/([A-G][b#]?)/g, function (s) {
         return noteTranspose(s, capoValue);
     });
-    const tChordsBB = tChords.replaceAll(/([A-G]bb)/gu, function (s) {
+    const tChordsBB = tChords.replaceAll(/(~ ?)/gu, function (s) {
         console.log("XX", s, noteTranspose(s[0], 2));
-        return noteTranspose(s[0], -2);
+        return "";
     });
-    console.log("lineT", rawLine, tChords, tChordsBB);
-    return tChordsBB;
+    console.log("YY LINE", tChordsBB);
+    const tChordsCC = tChordsBB.replaceAll(/([^ ]+%[^ ]*)/gu, function (s) {
+        console.log("YY", s);
+        return s.replace("%","")+" ";
+    })
+    return tChordsCC;
 }
 
 function noteTranspose(note, capoValue) {
@@ -53,8 +56,14 @@ function noteTranspose(note, capoValue) {
         gamme = gammeD;
     }
     const gLength = gamme.length;
-    const tNote = gamme[(index - capoValue + gLength) % gLength];
+    let tNote = gamme[(index - capoValue + gLength) % gLength];
     console.log("transpose", note, tNote)
+    if (note.length === 2 && tNote.length === 1) {
+        tNote += "%";
+    }
+    if (note.length === 1 && tNote.length === 2) {
+        tNote += "~";
+    }
 
     return tNote;
 
@@ -99,7 +108,7 @@ function writeLineText(line) {
 
 function escapeXml(unsafe) {
     if (!unsafe) return '<ins>&nbsp;</ins>';
-    return unsafe.replace(/[<>&'"]/g, function (c) {
+    return unsafe.replaceAll(/[<>&'"]/g, function (c) {
         switch (c) {
             case '<': return '&lt;';
             case '>': return '&gt;';
@@ -224,6 +233,12 @@ function updateStyle() {
     r.style.setProperty('--text-color', `${textColor}`);
     r.style.setProperty('--column-count', `${columnCount}`);
 
+    if (columnCount > 1) {
+        document.getElementById("chord-render").classList.add("column");
+    } else {
+        document.getElementById("chord-render").classList.remove("column");
+    }
+
 }
 
 
@@ -253,7 +268,7 @@ printButton.addEventListener("click", function (ev) {
 });
 
 chordArea.addEventListener("input", function (ev) {
-    const v = this.value;
+    const v = this.value.replaceAll("\t", "        ");
     recordStorage("songchord", v);
     renderSong(v);
 
