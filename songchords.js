@@ -5,6 +5,7 @@ const textFontSizeInput = document.getElementById("textfontsize");
 const chordFontSizeInput = document.getElementById("chordfontsize");
 const chordColorInput = document.getElementById("chordcolor");
 const textColorInput = document.getElementById("textcolor");
+const columnInput = document.getElementById("columncount");
 
 if (!chordArea) {
     console.error("No textarea");
@@ -207,11 +208,13 @@ function updateStyle() {
     const chordSize = chordFontSizeInput.value;
     const chordColor = chordColorInput.value;
     const textColor = textColorInput.value;
+    const columnCount = columnInput.value;
 
     r.style.setProperty('--text-font-size', `${textSize}px`);
     r.style.setProperty('--chord-font-size', `${chordSize}px`);
     r.style.setProperty('--chord-color', `${chordColor}`);
     r.style.setProperty('--text-color', `${textColor}`);
+    r.style.setProperty('--column-count', `${columnCount}`);
 
 }
 
@@ -247,11 +250,16 @@ textColorInput.addEventListener("input", function (ev) {
     recordStorage("textcolor", this.value);
     updateStyle();
 });
+columnInput.addEventListener("change", function (ev) {
+    recordStorage("column", this.value);
+    updateStyle();
+});
 
 chordArea.value = getStorage("songchord");
 capoInput.value = getStorage("capo");
 textFontSizeInput.value = getStorage("textfontsize") || 12;
 chordFontSizeInput.value = getStorage("chordfontsize") || 12;
-chordColorInput.value = getStorage("chordcolor") || 'green';
-textColorInput.value = getStorage("textcolor") || 'blue';
+chordColorInput.value = getStorage("chordcolor") || '#00ff00';
+textColorInput.value = getStorage("textcolor") || '#0000ff';
+columnInput.value = getStorage("column") || 1;
 renderSong(chordArea.value);

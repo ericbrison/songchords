@@ -3,6 +3,7 @@
     --chord-font-size: 12;
     --chord-color: green;
     --text-color: green;
+    --column-count: 1;
 
 }
 
@@ -31,14 +32,15 @@ main {
     flex-direction: column;
     flex: 1;
     padding: 0.5rem;
+    min-width: 9cm;
 }
 
 .song-write textarea {
-    outline: dashed 2px rgb(89, 0, 255);
     flex: 1;
     white-space: pre;
     overflow-wrap: normal;
     overflow-x: scroll;
+    resize: none;
 }
 
 
@@ -50,6 +52,7 @@ main {
     overflow-y: auto;
     width: 100%;
     position: relative;
+    min-width: calc(9.5cm * var(--column-count))
 }
 
 .song-render .capo {
@@ -94,16 +97,24 @@ main {
     margin-top: 0.6rem;
 }
 
-.song-render-inside {
-    width: 9.5cm;
+.song-render {
+    width: calc(19cm / var(--column-count));
     border-right: 2px dashed grey;
 }
 
 
+.song-render-inside {
+    column-count: var(--column-count);
+    column-rule: dashed 2px rgb(118, 118, 125);
+}
+
 .page-break {
     width: 50%;
     border: dashed 2px grey;
+    break-after: column;
+    border-color: sandybrown;
 }
+
 
 .page-footer {
     text-align: right;
@@ -132,7 +143,7 @@ main {
     .song-render-inside {
         width: unset;
         border: none;
-        column-count: 2;
+        column-count: var(--column-count);
     }
 
     .page-footer {
