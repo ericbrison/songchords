@@ -26,7 +26,7 @@ function renderChord(line) {
 }
 
 function lineTranspose(line) {
-    const capoValue = parseInt(capoInput.value);
+    const capoValue = parseInt(capoInput.value) || 0;
     const rawLine = line.replaceAll("♭", "b").replaceAll("♯", "#");
     const tChords = rawLine.replaceAll(/([A-G][b#]?)/g, function (s) {
         return noteTranspose(s, capoValue);
@@ -54,6 +54,7 @@ function noteTranspose(note, capoValue) {
     }
     const gLength = gamme.length;
     let tNote = gamme[(index - capoValue + gLength) % gLength];
+
     if (note.length === 2 && tNote.length === 1) {
         tNote += "%";
     }
