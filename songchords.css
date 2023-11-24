@@ -13,6 +13,7 @@ body {
     flex-direction: column;
     margin: 0;
     background-color: white;
+    font-family: sans;
 
 }
 
@@ -24,6 +25,7 @@ header.toolbar {
     justify-content: space-around;
     gap: 0.25rem;
     box-shadow: 0px 4px 3px grey;
+    background-color: #f5f5f5;
 }
 
 
@@ -90,6 +92,7 @@ option.option-separator {
 
 .dragover {
     outline:solid 3px orange;
+    background-color:rgb(232, 214, 191);
 }
 
 main {
