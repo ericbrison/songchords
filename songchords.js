@@ -9,6 +9,7 @@ const columnInput = document.getElementById("columncount");
 const notationInput = document.getElementById("notation");
 const printButton = document.getElementById("print");
 const saveButton = document.getElementById("save");
+const deleteButton = document.getElementById("delete");
 const chordNameInput = document.getElementById("chord-name");
 const chordSelectInput = document.getElementById("chord-select");
 
@@ -329,6 +330,29 @@ function getStorage(key) {
     return songData[currentSongIndex][key];
 }
 
+function deleteCurrentSong() {
+
+    const songData = this.getAllStorage();
+    if (currentSongIndex) {
+
+        if (songData[currentSongIndex]) {
+            console.log("delete KEys", currentSongIndex);
+            delete songData[currentSongIndex];
+
+        }
+
+        const keys = Object.keys(songData);
+        console.log("new KEys", keys);
+
+        if (keys.length > 0) {
+            currentSongIndex = keys[0];
+        }
+
+        window.localStorage.setItem(storageDataKey, JSON.stringify(songData));
+
+    }
+}
+
 function getAllStorage() {
 
     const songData = JSON.parse(window.localStorage.getItem(storageDataKey) || "{}");
@@ -540,6 +564,15 @@ document.addEventListener('keydown', e => {
         // Prevent the Save dialog to open
         e.preventDefault();
         saveSong();
+    }
+});
+
+deleteButton.addEventListener('click', e => {
+    if (window.confirm(`Confirm delete ${chordNameInput.value} ?`)) {
+        deleteCurrentSong();
+
+        updateSongSelector();
+        resetSong();
     }
 });
 

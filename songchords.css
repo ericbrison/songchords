@@ -109,8 +109,9 @@ main {
     display: flex;
     flex-direction: column;
     flex: 1;
-    padding: 0.5rem;
-    min-width: 9cm;
+    min-width: 9cm; 
+    margin: 0.5rem;
+    box-shadow: 4px 5px 3px #c7c7c7;
 }
 
 .song-write textarea {
@@ -211,6 +212,7 @@ main {
     margin: 1.5cm;
 }
 
+
 @media print {
 
 
@@ -224,6 +226,7 @@ main {
     }
 
     header,
+    header.toolbar,
     .song-write {
         display: none;
     }
