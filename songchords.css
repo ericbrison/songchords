@@ -136,7 +136,11 @@ main {
 }
 
 .song-render .capo {
-    text-align: center;
+    text-align: right;
+}
+.song-render .capo span {
+    border: dotted 1px var(--chord-color);
+    padding: 0.5rem;
 }
 
 .song-render ins {
@@ -161,6 +165,10 @@ main {
     font-size: var(--chord-font-size);
 }
 
+
+.song-render sup {
+  vertical-align: text-top;
+}
 
 .song-render .solo-chord {
     color: var(--chord-color);

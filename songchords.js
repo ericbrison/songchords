@@ -57,7 +57,6 @@ chordArea.ondrop = function (e) {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
 
-    console.log("DROP", file);
 
     if (file.type !== "text/plain") {
         alert("Only text file can be dropped here");
@@ -76,8 +75,6 @@ chordArea.ondrop = function (e) {
 
     const reader = new FileReader();
     reader.onload = function (e) {
-
-        console.log("LAOD", e.target.result);
         chordArea.value = e.target.result;
 
         chordArea.classList.remove("dragover");
@@ -100,7 +97,15 @@ function renderChord(line) {
 
 
 
+
+
     return chord;
+}
+
+function expSus(line) {
+    return line.replaceAll(/(sus[0-9])/g, (s) => {
+        return `<sup>${s}</sup>`;
+    })
 }
 
 function lineTranspose(line) {
@@ -147,13 +152,16 @@ function noteTranspose(note, capoValue) {
 function writeCapo(capoValue) {
     const p = document.createElement('p');
     p.classList.add("capo");
-    p.textContent = `capo : ${capoValue}`;
+
+    const sp = document.createElement('span');
+    sp.textContent = `capo : ${capoValue}`;
+    p.appendChild(sp);
     songRender.appendChild(p);
 }
 function writeLineChord(line) {
     const p = document.createElement('p');
     p.classList.add("solo-chord");
-    p.textContent = renderChord(line);
+    p.innerHTML = expSus(escapeXml(renderChord(line)));
     songRender.appendChild(p);
 }
 function writeLineText(line, isSong) {
@@ -215,11 +223,12 @@ function writeMergeChordLine(chordLine, songText) {
         if (chordLine[i] && chordLine[i] !== ' ' && idxChord <= i) {
             idxChord = i;
             songLine += '<span>';
+            let chordPart = '';
             while (chordLine[idxChord] && chordLine[idxChord] !== ' ') {
-                songLine += escapeXml(renderChord(chordLine[idxChord]));
+                chordPart += escapeXml(renderChord(chordLine[idxChord]));
                 idxChord++;
             }
-
+            songLine += expSus(chordPart);
             songLine += '</span>';
         }
         songLine += escapeXml(songText[i]);
@@ -242,6 +251,8 @@ function renderSong(song) {
     let capoIsWrote = false;
 
     updateStyle(textFontSizeInput.value);
+
+    window.document.title =  chordNameInput.value.replace(".txt", "");
 
 
     lines.forEach((line, idx) => {
@@ -281,6 +292,7 @@ function renderSong(song) {
 }
 
 function isChordLine(line) {
+    line = line.replaceAll("maj7", "Δ");
     if (line.match(/[ac-ln-rtv-wy-z]/)) {
         return false;
     }
@@ -300,8 +312,6 @@ function isChordLine(line) {
 function recordStorage(key, v) {
     const songData = this.getAllStorage();
 
-
-    console.log("store", currentSongIndex, key, v);
     if (!currentSongIndex) {
         currentSongIndex = Math.random().toString(32).slice(2);
         window.localStorage.setItem(storageCurrentIndexKey, currentSongIndex);
@@ -336,13 +346,11 @@ function deleteCurrentSong() {
     if (currentSongIndex) {
 
         if (songData[currentSongIndex]) {
-            console.log("delete KEys", currentSongIndex);
             delete songData[currentSongIndex];
 
         }
 
         const keys = Object.keys(songData);
-        console.log("new KEys", keys);
 
         if (keys.length > 0) {
             currentSongIndex = keys[0];
@@ -552,6 +560,8 @@ chordSelectInput.addEventListener("change", function (ev) {
         updateSongSelector();
     } else {
         currentSongIndex = this.value;
+
+        window.localStorage.setItem(storageCurrentIndexKey, currentSongIndex);
         resetSong();
         updateSongSelector();
     }
