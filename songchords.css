@@ -16,7 +16,7 @@ body {
 
 }
 
-header {
+header.toolbar {
     padding: 0.5rem;
     display: flex;
     align-items: center;
@@ -72,6 +72,26 @@ header select {
     padding: 3px;
 }
 
+header.chord-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+option.option-plus {
+    font-weight: bold;
+}
+
+option.option-separator {
+    background-color: grey;
+    height: 2px;
+    font-size: 1px;
+
+}
+
+.dragover {
+    outline:solid 3px orange;
+}
+
 main {
     display: flex;
     flex: 1;
@@ -82,6 +102,7 @@ main {
     font-family: monospace;
     border: solid 1px grey;
     border-bottom: none;
+    flex: 1;
 }
 
 .song-write {

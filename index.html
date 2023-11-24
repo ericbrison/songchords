@@ -10,7 +10,7 @@
 </head>
 
 <body>
-    <header>
+    <header class="toolbar">
         <label for="textfontsize">Font size (px):
             <input id="textfontsize" type="number" min="0" max="100">
         </label>
@@ -44,15 +44,21 @@
         </label>
         <span class="elastic"></span>
         <span class="button">
-        <button id="print" title="Print (Ctrl-P)">🖨</button></span>
+            <button id="print" title="Print (Ctrl-P)">🖨</button></span>
         <span class="button">
-        <button id="save" title="Save (Ctrl-S)">💾</button></span>
+            <button id="save" title="Save (Ctrl-S)">💾</button></span>
     </header>
     <main>
         <section class="song-write">
+            <header class="chord-header">
                 <input class="chord-name" id="chord-name" value="mySong">
-                <textarea name="text" id="chord-area"></textarea>
-              
+                <select title="Song switcher" id="chord-select">
+                    <option value="">-</option>
+                    <option value="+">New song</option>
+                </select>
+            </header>
+            <textarea name="text" id="chord-area"></textarea>
+
 
         </section>
         <section class="song-render">
