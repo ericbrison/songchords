@@ -42,12 +42,18 @@
                 <option value="#">♯</option>
             </select>
         </label>
+        <span class="elastic"></span>
         <span class="button">
-        <button id="print" title="Print">🖨</button></span>
+        <button id="print" title="Print (Ctrl-P)">🖨</button></span>
+        <span class="button">
+        <button id="save" title="Save (Ctrl-S)">💾</button></span>
     </header>
     <main>
         <section class="song-write">
-            <textarea id="chord-area"></textarea>
+                <input class="chord-name" id="chord-name" value="mySong">
+                <textarea name="text" id="chord-area"></textarea>
+              
+
         </section>
         <section class="song-render">
             <div class="song-render-inside" id="chord-render"></div>

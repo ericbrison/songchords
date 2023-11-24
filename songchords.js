@@ -8,12 +8,35 @@ const textColorInput = document.getElementById("textcolor");
 const columnInput = document.getElementById("columncount");
 const notationInput = document.getElementById("notation");
 const printButton = document.getElementById("print");
+const saveButton = document.getElementById("save");
+const chordNameInput = document.getElementById("chord-name");
 
 if (!chordArea) {
     console.error("No textarea");
 }
 if (!songRender) {
     console.error("No songRender");
+}
+
+
+function downloadFileText(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+}
+
+
+function saveSong() {
+    
+    const songName = window.document.getElementById('chord-name').value || "unnamed";
+    downloadFileText(songName, chordArea.value);
 }
 
 function renderChord(line) {
@@ -285,6 +308,7 @@ chordColorInput.value = getStorage("chordcolor") || '#188B18';
 textColorInput.value = getStorage("textcolor") || '#23239F';
 columnInput.value = getStorage("column") || 1;
 notationInput.value = getStorage("notation") || '';
+chordNameInput.value = getStorage("songchordname") || "MySong";
 
 // -------------------
 // Event Listeners
@@ -294,7 +318,17 @@ printButton.addEventListener("click", function (ev) {
     window.print();
 
 });
+saveButton.addEventListener("click", function (ev) {
+    saveSong();
+});
 
+
+
+chordNameInput.addEventListener("change", function (ev) {
+    const v = this.value.trim();
+    recordStorage("songchordname", v);
+
+});
 chordArea.addEventListener("input", function (ev) {
     const v = this.value.replaceAll("\t", "        ");
     recordStorage("songchord", v);
@@ -345,4 +379,16 @@ notationInput.addEventListener("change", function (ev) {
     renderSong(chordArea.value);
 });
 
+
+document.addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 's') {
+        // Prevent the Save dialog to open
+        e.preventDefault();
+        saveSong();
+    }
+});
+
+
+// ============================
+//=========== MAIN ============
 renderSong(chordArea.value);

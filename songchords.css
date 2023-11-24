@@ -12,6 +12,7 @@ body {
     display: flex;
     flex-direction: column;
     margin: 0;
+    background-color: white;
 
 }
 
@@ -42,6 +43,7 @@ header label:hover {
 
 header input[type=color] {
     height: 1.5rem;
+    background-color: white;
 }
 
 header input[type=number] {
@@ -49,13 +51,18 @@ header input[type=number] {
     height: 1rem;
 }
 
-header .button {
+header .elastic {
     flex: 1;
+
+}
+
+header .button {
     text-align: right;
 }
 
 header button {
     height: 1.5rem;
+    min-width: 2rem;
 }
 
 
@@ -71,7 +78,11 @@ main {
     overflow: hidden;
 }
 
-
+.chord-name {
+    font-family: monospace;
+    border: solid 1px grey;
+    border-bottom: none;
+}
 
 .song-write {
     display: flex;
