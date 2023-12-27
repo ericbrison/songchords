@@ -1,3 +1,6 @@
 # songchords
 
-Simple page to translate song whith chords in plain text to a print version
+Simple page to translate plain text song with chords to a print version
+
+
+[Demo page](https://ericbrison.github.io/songchords/)

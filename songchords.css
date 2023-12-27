@@ -90,15 +90,27 @@ option.option-separator {
 
 }
 
+
+button.active {
+    background-color: rgb(4, 79, 129);
+    color: white;
+}
+
 .dragover {
-    outline:solid 3px orange;
-    background-color:rgb(232, 214, 191);
+    outline: solid 3px orange;
+    background-color: rgb(232, 214, 191);
 }
 
 main {
     display: flex;
     flex: 1;
     overflow: hidden;
+}
+
+
+main .button-delete button {
+    background: transparent;
+    border-width: 1px;
 }
 
 .chord-name {
@@ -112,7 +124,7 @@ main {
     display: flex;
     flex-direction: column;
     flex: 1;
-    min-width: 9cm; 
+    min-width: 9cm;
     margin: 0.5rem;
     box-shadow: 4px 5px 3px #c7c7c7;
 }
@@ -130,6 +142,7 @@ main {
     flex: var(--column-count);
     font-family: sans;
     font-size: var(--text-font-size);
+    box-sizing: border-box;
     font-weight: bold;
     overflow-y: auto;
     width: 100%;
@@ -141,6 +154,7 @@ main {
 .song-render .capo {
     text-align: right;
 }
+
 .song-render .capo span {
     border: dotted 1px var(--chord-color);
     padding: 0.5rem;
@@ -170,7 +184,7 @@ main {
 
 
 .song-render sup {
-  vertical-align: text-top;
+    vertical-align: text-top;
 }
 
 .song-render .solo-chord {
@@ -213,10 +227,59 @@ main {
     break-after: page;
 }
 
-
+/* ==============
+   READ ONLY MODE
+================== */
 
 .page-footer {
     text-align: right;
+}
+
+main.read-only {
+    flex-direction: column;
+}
+
+main.read-only .song-write {
+    flex: 0;
+}
+main.read-only .song-render {
+    width: 100%;
+    padding: 1rem;
+}
+
+
+main.read-only textarea {
+    display: none;
+}
+
+
+main.read-only .button-delete {
+    display: none;
+}
+main.read-only .chord-name {
+    border-bottom: solid 1px grey;
+    pointer-events: none;
+    display:none;
+}
+main.read-only  header select {
+    width: 100%;
+}
+
+main.read-only .song-render-inside.column {
+    width: auto;
+}
+
+main.read-only .song-render-inside.column .page-break,
+main.read-only .page-break {
+    width: 50%;
+    border: dashed 2px grey;
+    border-color: sandybrown;
+    break-after: unset;
+}
+
+
+main.read-only .option-edit {
+    display:none;
 }
 
 @page {

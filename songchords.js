@@ -8,6 +8,7 @@ const textColorInput = document.getElementById("textcolor");
 const columnInput = document.getElementById("columncount");
 const notationInput = document.getElementById("notation");
 const printButton = document.getElementById("print");
+const readonlyButton = document.getElementById("readonly");
 const saveButton = document.getElementById("save");
 const deleteButton = document.getElementById("delete");
 const chordNameInput = document.getElementById("chord-name");
@@ -103,9 +104,13 @@ function renderChord(line) {
 }
 
 function expSus(line) {
-    return line.replaceAll(/(sus[0-9])/g, (s) => {
+    const expLine = line.replaceAll(/((sus|\/)[0-9])/g, (s) => {
         return `<sup>${s}</sup>`;
-    })
+    });
+    return expLine;
+    return expLine.replaceAll(/([0-9])/g, (s) => {
+        return `<sup>${s}</sup>`;
+    });
 }
 
 function lineTranspose(line) {
@@ -252,7 +257,7 @@ function renderSong(song) {
 
     updateStyle(textFontSizeInput.value);
 
-    window.document.title =  chordNameInput.value.replace(".txt", "");
+    window.document.title = chordNameInput.value.replace(".txt", "");
 
 
     lines.forEach((line, idx) => {
@@ -432,13 +437,16 @@ It's incredible...
 
 function updateSongSelector() {
 
+    const readOnlyMode = getStorage("readMode");
 
+  console.log("update", readOnlyMode);
 
 
     while (chordSelectInput.options.length > 0) {
         chordSelectInput.remove(0);
     }
     let emptyOption = new Option("-", "");
+    emptyOption.classList.add("option-edit");
     chordSelectInput.add(emptyOption)
     for (const [key, value] of Object.entries(getAllStorage())) {
         if (key !== currentSongIndex) {
@@ -447,7 +455,11 @@ function updateSongSelector() {
         } else {
             const newOption = new Option(value.songchordname, "-");
 
-            newOption.disabled = true;
+            if (!readOnlyMode) {
+                newOption.disabled = true;
+            } else {
+                newOption.selected =true;
+            }
             chordSelectInput.add(newOption);
 
         }
@@ -456,11 +468,14 @@ function updateSongSelector() {
 
     let sepOption = new Option("", "--");
     sepOption.classList.add("option-separator");
+    sepOption.classList.add("option-edit");
     sepOption.disabled = true;
     chordSelectInput.add(sepOption)
     let addOption = new Option("New song", "+");
     addOption.classList.add("option-plus");
+    addOption.classList.add("option-edit");
     chordSelectInput.add(addOption)
+
 }
 function resetSong() {
     chordArea.value = getStorage("songchord") || favoriteSong;
@@ -474,8 +489,22 @@ function resetSong() {
     chordNameInput.value = getStorage("songchordname") || "MySong";
 }
 
+function viewMode(readMode) {
+    console.log("view", readMode);
+    const main = document.querySelector("main");
+    if (readMode) {
+        readonlyButton.classList.add("active");
+        main.classList.add("read-only");
+
+    } else {
+        readonlyButton.classList.remove("active");
+        main.classList.remove("read-only");
+    }
+}
+
 updateSongSelector();
 resetSong();
+viewMode(getStorage("readMode") || false);
 
 
 // -------------------
@@ -491,6 +520,19 @@ saveButton.addEventListener("click", function (ev) {
 });
 
 
+readonlyButton.addEventListener("click", function (ev) {
+    if (getStorage("readMode")) {
+        recordStorage("readMode", false);
+        viewMode(false);
+    } else {
+        recordStorage("readMode", true);
+        viewMode(true);
+
+        
+    }
+    updateSongSelector();
+
+});
 
 chordNameInput.addEventListener("change", function (ev) {
     const v = this.value.trim();
