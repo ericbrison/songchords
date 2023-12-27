@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="11.051702mm"
+   height="11.010579mm"
+   viewBox="0 0 11.051702 11.010579"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="icon.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="13.747553"
+     inkscape:cx="21.458365"
+     inkscape:cy="28.514166"
+     inkscape:window-width="3840"
+     inkscape:window-height="2090"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <rect
+       x="191.08583"
+       y="472.96826"
+       width="163.42419"
+       height="106.5016"
+       id="rect2432" />
+  </defs>
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-51.59685,-124.53892)">
+    <text
+       xml:space="preserve"
+       transform="scale(0.26458333)"
+       id="text2430"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect2432);fill:#ff6600;fill-opacity:1;stroke:none"
+       inkscape:export-filename="/home/eric/Documents/Personnel/SongChords/Songs/text2430.png"
+       inkscape:export-xdpi="585.82001"
+       inkscape:export-ydpi="585.82001"><tspan
+         x="191.08594"
+         y="508.35938"
+         id="tspan29729">E</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:7.71421px;line-height:1.25;font-family:sans-serif;fill:#aad400;fill-opacity:1;stroke:none;stroke-width:0.192856"
+       x="56.90937"
+       y="133.19745"
+       id="text19146"
+       transform="scale(1.0243686,0.9762111)"
+       inkscape:export-filename="/home/eric/Documents/Personnel/SongChords/Songs/text2430.png"
+       inkscape:export-xdpi="585.82001"
+       inkscape:export-ydpi="585.82001"><tspan
+         sodipodi:role="line"
+         id="tspan19144"
+         style="fill:#aad400;stroke-width:0.192856"
+         x="56.90937"
+         y="133.19745">7</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#ffcc00;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="56.295822"
+       y="135.51849"
+       id="text25142"
+       inkscape:export-filename="/home/eric/Documents/Personnel/SongChords/Songs/text2430.png"
+       inkscape:export-xdpi="585.82001"
+       inkscape:export-ydpi="585.82001"><tspan
+         sodipodi:role="line"
+         id="tspan25140"
+         style="fill:#ffcc00;stroke-width:0.264583"
+         x="56.295822"
+         y="135.51849">♭</tspan></text>
+  </g>
+</svg>

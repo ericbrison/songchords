@@ -271,9 +271,7 @@ main.read-only .song-render-inside.column {
 
 main.read-only .song-render-inside.column .page-break,
 main.read-only .page-break {
-    width: 50%;
-    border: dashed 2px grey;
-    border-color: sandybrown;
+    display:none;
     break-after: unset;
 }
 

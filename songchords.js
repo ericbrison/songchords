@@ -21,7 +21,8 @@ if (!songRender) {
     console.error("No songRender");
 }
 
-const storageDataKey = "songs";
+const storageDataSongKey = "songs";
+const storageDataGlobalKey = "global";
 const storageCurrentIndexKey = "currentSongIndex";
 let currentSongIndex = window.localStorage.getItem(storageCurrentIndexKey);
 
@@ -314,8 +315,8 @@ function isChordLine(line) {
 // ----------------------------- storage management  ------------
 // -----------------------------------------------------------------
 
-function recordStorage(key, v) {
-    const songData = this.getAllStorage();
+function recordSongInStorage(key, v) {
+    const songData = this.getAllSongsStorage();
 
     if (!currentSongIndex) {
         currentSongIndex = Math.random().toString(32).slice(2);
@@ -327,27 +328,37 @@ function recordStorage(key, v) {
     }
     songData[currentSongIndex][key] = v;
 
-    window.localStorage.setItem(storageDataKey, JSON.stringify(songData));
+    window.localStorage.setItem(storageDataSongKey, JSON.stringify(songData));
 
 }
 
-function getStorage(key) {
-
-    const songData = this.getAllStorage();
-
-
+function getSongInfoFromStorage(key) {
+    const songData = this.getAllSongsStorage();
 
     if (!currentSongIndex || !songData[currentSongIndex]) {
         return undefined;
     }
 
-
     return songData[currentSongIndex][key];
 }
 
+
+
+function getGlobalInfoFromStorage(key) {
+    const globData = this.getAllGlobalStorage();
+    return globData[key];
+}
+function setGlobalInfoIntoStorage(key, value) {
+    const globData = this.getAllGlobalStorage();
+    globData[key] = value;
+
+    window.localStorage.setItem(storageDataGlobalKey, JSON.stringify(globData));
+}
+
+
 function deleteCurrentSong() {
 
-    const songData = this.getAllStorage();
+    const songData = this.getAllSongsStorage();
     if (currentSongIndex) {
 
         if (songData[currentSongIndex]) {
@@ -361,14 +372,22 @@ function deleteCurrentSong() {
             currentSongIndex = keys[0];
         }
 
-        window.localStorage.setItem(storageDataKey, JSON.stringify(songData));
+        window.localStorage.setItem(storageDataSongKey, JSON.stringify(songData));
 
     }
 }
 
-function getAllStorage() {
 
-    const songData = JSON.parse(window.localStorage.getItem(storageDataKey) || "{}");
+
+function getAllGlobalStorage() {
+
+    const globalData = JSON.parse(window.localStorage.getItem(storageDataGlobalKey) || "{}");
+    return globalData;
+}
+
+function getAllSongsStorage() {
+
+    const songData = JSON.parse(window.localStorage.getItem(storageDataSongKey) || "{}");
     return songData;
 }
 
@@ -437,9 +456,9 @@ It's incredible...
 
 function updateSongSelector() {
 
-    const readOnlyMode = getStorage("readMode");
+    const readOnlyMode = getGlobalInfoFromStorage("readMode");
 
-  console.log("update", readOnlyMode);
+    console.log("update", readOnlyMode);
 
 
     while (chordSelectInput.options.length > 0) {
@@ -448,7 +467,7 @@ function updateSongSelector() {
     let emptyOption = new Option("-", "");
     emptyOption.classList.add("option-edit");
     chordSelectInput.add(emptyOption)
-    for (const [key, value] of Object.entries(getAllStorage())) {
+    for (const [key, value] of Object.entries(getAllSongsStorage())) {
         if (key !== currentSongIndex) {
             const newOption = new Option(value.songchordname, key);
             chordSelectInput.add(newOption)
@@ -458,7 +477,7 @@ function updateSongSelector() {
             if (!readOnlyMode) {
                 newOption.disabled = true;
             } else {
-                newOption.selected =true;
+                newOption.selected = true;
             }
             chordSelectInput.add(newOption);
 
@@ -478,15 +497,16 @@ function updateSongSelector() {
 
 }
 function resetSong() {
-    chordArea.value = getStorage("songchord") || favoriteSong;
-    capoInput.value = getStorage("capo") || null;
-    textFontSizeInput.value = getStorage("textfontsize") || 12;
-    chordFontSizeInput.value = getStorage("chordfontsize") || 0;
-    chordColorInput.value = getStorage("chordcolor") || '#188B18';
-    textColorInput.value = getStorage("textcolor") || '#23239F';
-    columnInput.value = getStorage("column") || 1;
-    notationInput.value = getStorage("notation") || '';
-    chordNameInput.value = getStorage("songchordname") || "MySong";
+    chordArea.value = getSongInfoFromStorage("songchord") || favoriteSong;
+    capoInput.value = getSongInfoFromStorage("capo") || null;
+    notationInput.value = getSongInfoFromStorage("notation") || '';
+    chordNameInput.value = getSongInfoFromStorage("songchordname") || "MySong";
+
+    textFontSizeInput.value = getGlobalInfoFromStorage("textfontsize") || 12;
+    chordFontSizeInput.value = getGlobalInfoFromStorage("chordfontsize") || 0;
+    chordColorInput.value = getGlobalInfoFromStorage("chordcolor") || '#188B18';
+    textColorInput.value = getGlobalInfoFromStorage("textcolor") || '#23239F';
+    columnInput.value = getGlobalInfoFromStorage("column") || 1;
 }
 
 function viewMode(readMode) {
@@ -504,7 +524,7 @@ function viewMode(readMode) {
 
 updateSongSelector();
 resetSong();
-viewMode(getStorage("readMode") || false);
+viewMode(getGlobalInfoFromStorage("readMode") || false);
 
 
 // -------------------
@@ -521,14 +541,14 @@ saveButton.addEventListener("click", function (ev) {
 
 
 readonlyButton.addEventListener("click", function (ev) {
-    if (getStorage("readMode")) {
-        recordStorage("readMode", false);
+    if (getGlobalInfoFromStorage("readMode")) {
+        setGlobalInfoIntoStorage("readMode", false);
         viewMode(false);
     } else {
-        recordStorage("readMode", true);
+        setGlobalInfoIntoStorage("readMode", true);
         viewMode(true);
 
-        
+
     }
     updateSongSelector();
 
@@ -536,19 +556,19 @@ readonlyButton.addEventListener("click", function (ev) {
 
 chordNameInput.addEventListener("change", function (ev) {
     const v = this.value.trim();
-    recordStorage("songchordname", v);
+    recordSongInStorage("songchordname", v);
 
 });
 chordArea.addEventListener("input", function (ev) {
     const v = this.value.replaceAll("\t", "        ");
-    recordStorage("songchord", v);
+    recordSongInStorage("songchord", v);
     renderSong(v);
 
 });
 
 capoInput.addEventListener("change", function (ev) {
 
-    recordStorage("capo", this.value);
+    recordSongInStorage("capo", this.value);
 
     if (this.value > 0) {
         if (notationInput.value === "") {
@@ -565,27 +585,27 @@ capoInput.addEventListener("change", function (ev) {
 
 });
 textFontSizeInput.addEventListener("change", function (ev) {
-    recordStorage("textfontsize", this.value);
+    setGlobalInfoIntoStorage("textfontsize", this.value);
     renderSong(chordArea.value);
 });
 chordFontSizeInput.addEventListener("change", function (ev) {
-    recordStorage("chordfontsize", this.value);
+    setGlobalInfoIntoStorage("chordfontsize", this.value);
     renderSong(chordArea.value);
 });
 chordColorInput.addEventListener("input", function (ev) {
-    recordStorage("chordcolor", this.value);
+    setGlobalInfoIntoStorage("chordcolor", this.value);
     updateStyle();
 });
 textColorInput.addEventListener("input", function (ev) {
-    recordStorage("textcolor", this.value);
+    setGlobalInfoIntoStorage("textcolor", this.value);
     updateStyle();
 });
 columnInput.addEventListener("change", function (ev) {
-    recordStorage("column", this.value);
+    setGlobalInfoFromStorage("column", this.value);
     updateStyle();
 });
 notationInput.addEventListener("change", function (ev) {
-    recordStorage("notation", this.value);
+    recordSongInStorage("notation", this.value);
     renderSong(chordArea.value);
 });
 
@@ -597,8 +617,8 @@ chordSelectInput.addEventListener("change", function (ev) {
         chordArea.value = "New Song";
 
 
-        recordStorage("songchordname", chordNameInput.value);
-        recordStorage("songchord", chordArea.value);
+        recordSongInStorage("songchordname", chordNameInput.value);
+        recordSongInStorage("songchord", chordArea.value);
         updateSongSelector();
     } else {
         currentSongIndex = this.value;
