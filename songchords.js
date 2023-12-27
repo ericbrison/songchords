@@ -458,8 +458,6 @@ function updateSongSelector() {
 
     const readOnlyMode = getGlobalInfoFromStorage("readMode");
 
-    console.log("update", readOnlyMode);
-
 
     while (chordSelectInput.options.length > 0) {
         chordSelectInput.remove(0);
@@ -510,7 +508,6 @@ function resetSong() {
 }
 
 function viewMode(readMode) {
-    console.log("view", readMode);
     const main = document.querySelector("main");
     if (readMode) {
         readonlyButton.classList.add("active");
@@ -601,7 +598,7 @@ textColorInput.addEventListener("input", function (ev) {
     updateStyle();
 });
 columnInput.addEventListener("change", function (ev) {
-    setGlobalInfoFromStorage("column", this.value);
+    setGlobalInfoIntoStorage("column", this.value);
     updateStyle();
 });
 notationInput.addEventListener("change", function (ev) {
