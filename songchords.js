@@ -99,12 +99,13 @@ function renderChord(line) {
 
     chord = chord.replaceAll("maj7", "Δ");
     chord = chord.replaceAll("sus", "/");
+    chord = chord.replaceAll(/x([1-9]+)/g, "×$1");
 
     return chord;
 }
 
 function expSus(line) {
-    const expLine = line.replaceAll(/((sus|\/|add)[0-9])/g, (s) => {
+    const expLine = line.replaceAll(/((sus|\/|add)[0-9]+)/g, (s) => {
         return `<sup>${s}</sup>`;
     });
     return expLine;
@@ -240,6 +241,13 @@ function writeMergeChordLine(chordLine, songText) {
 
     }
 
+    // Add semi-quadratin spaces to simulate appropriate length of spaces
+    songLine = songLine.replaceAll(/ ([ ]+)/g, (reg) => {
+        let spaces = '';
+        for (let i = 0; i < reg.length; i++) spaces += '&ensp;';
+        return spaces;
+    });
+
     p.innerHTML = songLine;
 
 
@@ -302,6 +310,7 @@ function isChordLine(line) {
     line = line.replaceAll(/([A-G])b/g, "$1");
     line = line.replaceAll(/sus[1-9]/g, "");
     line = line.replaceAll(/add[1-9]/g, "");
+    line = line.replaceAll(/x[1-9]/g, "");
 
     if (line.match(/[a-z]/)) {
         return false;
