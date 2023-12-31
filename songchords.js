@@ -98,6 +98,7 @@ function renderChord(line) {
     let chord = line.replaceAll("b", "♭").replaceAll("#", "♯");
 
     chord = chord.replaceAll("maj7", "Δ");
+    chord = chord.replaceAll("M7", "Δ");
     chord = chord.replaceAll("sus", "/");
     chord = chord.replaceAll(/x([1-9]+)/g, "×$1");
 
@@ -105,13 +106,13 @@ function renderChord(line) {
 }
 
 function expSus(line) {
-    const expLine = line.replaceAll(/((sus|\/|add)[0-9]+)/g, (s) => {
+    let expLine = line.replaceAll(/((sus|\/|add)[0-9]+)/g, (s) => {
         return `<sup>${s}</sup>`;
+    });
+     expLine = expLine.replaceAll(/(♭|♯)/g, (s) => {
+        return `<sup class="notation">${s}</sup>`;
     });
     return expLine;
-    return expLine.replaceAll(/([0-9])/g, (s) => {
-        return `<sup>${s}</sup>`;
-    });
 }
 
 function lineTranspose(line) {
@@ -306,6 +307,7 @@ function renderSong(song) {
 
 function isChordLine(line) {
     line = line.replaceAll("maj7", "Δ");
+    line = line.replaceAll("M7", "Δ");
     line = line.replaceAll(/([A-G]).?m/g, "$1");
     line = line.replaceAll(/([A-G])b/g, "$1");
     line = line.replaceAll(/sus[1-9]/g, "");

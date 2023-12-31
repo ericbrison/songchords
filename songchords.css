@@ -13,8 +13,9 @@ body {
     flex-direction: column;
     margin: 0;
     background-color: white;
-    font-family: sans;
-
+    font-family: sans-serif;
+    font-size: 1rem;
+    line-height: 1.3rem;
 }
 
 header.toolbar {
@@ -79,6 +80,11 @@ header.chord-header {
     justify-content: space-between;
 }
 
+select,
+option {
+    line-height: 1rem;
+}
+
 option.option-plus {
     font-weight: bold;
 }
@@ -140,7 +146,7 @@ main .button-delete button {
 
 .song-render {
     flex: var(--column-count);
-    font-family: sans;
+    font-family: sans-serif;
     font-size: var(--text-font-size);
     box-sizing: border-box;
     font-weight: bold;
@@ -169,6 +175,7 @@ main .button-delete button {
 .song-render p {
     margin: 0 0 0.3rem 0;
     white-space: pre;
+    line-height: 2rem;
 }
 
 .song-render .song-text {
@@ -185,8 +192,14 @@ main .button-delete button {
 
 .song-render sup {
     vertical-align: text-top;
+    line-height: 1rem;
 }
 
+
+.song-render sup.notation {
+    font-size: inherit;
+    font-family: auto;
+}
 .song-render .solo-chord {
     color: var(--chord-color);
     margin-bottom: 0;
