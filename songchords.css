@@ -161,7 +161,7 @@ main .button-delete button {
 }
 
 .song-render ins {
-    width: 0.6rem;
+    width: 0.9rem;
     display: inline-block;
     text-decoration: none;
 }
@@ -275,9 +275,14 @@ main.read-only .page-break {
     break-after: unset;
 }
 
-
+main .option-fake,
 main.read-only .option-edit {
     display:none;
+}
+
+main option:disabled {
+    background-color: rgb(9, 123, 180);
+    color: white;
 }
 
 @page {

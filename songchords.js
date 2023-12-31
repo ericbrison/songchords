@@ -95,17 +95,16 @@ chordArea.ondrop = function (e) {
 
 function renderChord(line) {
 
-    const chord = line.replaceAll("b", "♭").replaceAll("#", "♯");
+    let chord = line.replaceAll("b", "♭").replaceAll("#", "♯");
 
-
-
-
+    chord = chord.replaceAll("maj7", "Δ");
+    chord = chord.replaceAll("sus", "/");
 
     return chord;
 }
 
 function expSus(line) {
-    const expLine = line.replaceAll(/((sus|\/)[0-9])/g, (s) => {
+    const expLine = line.replaceAll(/((sus|\/|add)[0-9])/g, (s) => {
         return `<sup>${s}</sup>`;
     });
     return expLine;
@@ -231,10 +230,10 @@ function writeMergeChordLine(chordLine, songText) {
             songLine += '<span>';
             let chordPart = '';
             while (chordLine[idxChord] && chordLine[idxChord] !== ' ') {
-                chordPart += escapeXml(renderChord(chordLine[idxChord]));
+                chordPart += escapeXml(chordLine[idxChord]);
                 idxChord++;
             }
-            songLine += expSus(chordPart);
+            songLine += expSus(renderChord(chordPart));
             songLine += '</span>';
         }
         songLine += escapeXml(songText[i]);
@@ -299,7 +298,12 @@ function renderSong(song) {
 
 function isChordLine(line) {
     line = line.replaceAll("maj7", "Δ");
-    if (line.match(/[ac-ln-rtv-wy-z]/)) {
+    line = line.replaceAll(/([A-G]).?m/g, "$1");
+    line = line.replaceAll(/([A-G])b/g, "$1");
+    line = line.replaceAll(/sus[1-9]/g, "");
+    line = line.replaceAll(/add[1-9]/g, "");
+
+    if (line.match(/[a-z]/)) {
         return false;
     }
     if (line.match(/[H-Z]/)) {
@@ -458,14 +462,19 @@ function updateSongSelector() {
 
     const readOnlyMode = getGlobalInfoFromStorage("readMode");
 
+    // Sort by song title
+    const recorderSongs = Object.entries(getAllSongsStorage()).sort(
+        ([, a], [, b]) => a.songchordname.localeCompare(b.songchordname)
+    );
 
     while (chordSelectInput.options.length > 0) {
         chordSelectInput.remove(0);
     }
     let emptyOption = new Option("-", "");
     emptyOption.classList.add("option-edit");
+    emptyOption.classList.add("option-fake");
     chordSelectInput.add(emptyOption)
-    for (const [key, value] of Object.entries(getAllSongsStorage())) {
+    for (const [key, value] of recorderSongs) {
         if (key !== currentSongIndex) {
             const newOption = new Option(value.songchordname, key);
             chordSelectInput.add(newOption)
@@ -610,12 +619,13 @@ notationInput.addEventListener("change", function (ev) {
 chordSelectInput.addEventListener("change", function (ev) {
     if (this.value === "+") {
         currentSongIndex = null;
-        chordNameInput.value = `New Song ${this.options.length}`
-        chordArea.value = "New Song";
+        chordNameInput.value = ""
+        chordArea.value = "";
 
 
         recordSongInStorage("songchordname", chordNameInput.value);
         recordSongInStorage("songchord", chordArea.value);
+        chordNameInput.focus();
         updateSongSelector();
     } else {
         currentSongIndex = this.value;
