@@ -25,10 +25,9 @@ header.toolbar {
     flex-wrap: wrap;
     justify-content: space-around;
     gap: 0.25rem;
-    box-shadow: 0px 4px 3px grey;
+    box-shadow: 0 4px 3px grey;
     background-color: #f5f5f5;
 }
-
 
 
 header label {
@@ -182,7 +181,7 @@ main .button-delete button {
     padding-top: var(--chord-font-size);
 }
 
-.song-render .song-text>span {
+.song-render .song-text > span {
     color: var(--chord-color);
     position: absolute;
     transform: translate(0, calc(var(--chord-font-size) * -1));
@@ -198,14 +197,29 @@ main .button-delete button {
 
 .song-render sup.notation {
     font-size: inherit;
-    font-family: auto;
+    font-family: auto, sans-serif;
 }
+
 .song-render .solo-chord {
     color: var(--chord-color);
     margin-bottom: 0;
     font-size: var(--chord-font-size);
 
     font-family: monospace;
+    line-height: 1.2rem;
+}
+
+.song-render .solo-chord sup {
+    font-size: inherit;
+}
+.song-render .solo-chord.solo-tab {
+    font-weight: normal;
+}
+.song-render .solo-chord.solo-tab .tab-string {
+    display: inline-block;
+    width: 2rem;
+    font-weight: bold;
+    text-align: center;
 }
 
 
@@ -213,13 +227,10 @@ main .button-delete button {
     color: var(--text-color);
 }
 
-.song-render .solo-chord+.song-text {
+.song-render .solo-chord + .song-text {
     margin-top: 0.6rem;
 }
 
-.song-render {
-    width: 20cm;
-}
 
 
 .song-render-inside.column {
@@ -235,8 +246,7 @@ main .button-delete button {
 
 .page-break {
     width: 50%;
-    border: dashed 2px grey;
-    border-color: sandybrown;
+    border: dashed 2px sandybrown;
     break-after: page;
 }
 
@@ -248,49 +258,55 @@ main .button-delete button {
     text-align: right;
 }
 
-main.read-only {
+body.read-only main {
     flex-direction: column;
 }
 
-main.read-only .song-write {
+body.read-only .song-write {
     flex: 0;
 }
-main.read-only .song-render {
+
+body.read-only .song-render {
     width: 100%;
     padding: 1rem;
 }
 
 
-main.read-only textarea {
+body.read-only main textarea {
     display: none;
 }
 
-
-main.read-only .button-delete {
+body.read-only .button-edit{
     display: none;
 }
-main.read-only .chord-name {
+
+body.read-only .button-delete {
+    display: none;
+}
+
+body.read-only main .chord-name {
     border-bottom: solid 1px grey;
     pointer-events: none;
-    display:none;
+    display: none;
 }
-main.read-only  header select {
+
+body.read-only main header select {
     width: 100%;
 }
 
-main.read-only .song-render-inside.column {
+body.read-only main .song-render-inside.column {
     width: auto;
 }
 
-main.read-only .song-render-inside.column .page-break,
-main.read-only .page-break {
-    display:none;
+body.read-only main .song-render-inside.column .page-break,
+body.read-only main .page-break {
+    display: none;
     break-after: unset;
 }
 
 main .option-fake,
-main.read-only .option-edit {
-    display:none;
+body.read-only main .option-edit {
+    display: none;
 }
 
 main option:disabled {
@@ -305,6 +321,9 @@ main option:disabled {
 
 @media print {
 
+    .song-render {
+        width: 20cm;
+    }
 
     .song-render,
     main {

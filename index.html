@@ -19,15 +19,15 @@
             <input id="textfontsize" type="number" min="0" max="100">
         </label>
 
-        <label for="chordfontsize">Chord delta size (px):
+        <label class="button-edit" for="chordfontsize">Chord delta size (px):
             <input id="chordfontsize" type="number" min="-10" max="20">
         </label>
 
-        <label for="chordcolor">Chord color:
+        <label class="button-edit" for="chordcolor">Chord color:
             <input id="chordcolor" type="color">
         </label>
 
-        <label for="textcolor">Text color:
+        <label class="button-edit" for="textcolor">Text color:
             <input id="textcolor" type="color">
         </label>
 
@@ -48,10 +48,10 @@
         </label>
         <span class="elastic"></span>
         <span class="button">
-            <button id="readonly" title="View mode">R</button></span>
-        <span class="button">
+            <button id="readonly" title="View mode">👁</button></span>
+        <span class="button button-edit">
             <button id="print" title="Print (Ctrl-P)">🖨</button></span>
-        <span class="button">
+        <span class="button button-edit">
             <button id="save" title="Save (Ctrl-S)">💾</button></span>
     </header>
     <main>
@@ -67,8 +67,6 @@
                 </span>
             </header>
             <textarea name="text" id="chord-area" spellcheck="false"></textarea>
-
-
         </section>
         <section class="song-render">
             <div class="song-render-inside" id="chord-render"></div>

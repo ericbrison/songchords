@@ -1,17 +1,30 @@
+/** @type HTMLTextAreaElement */
 const chordArea = document.getElementById("chord-area");
 const songRender = document.getElementById("chord-render");
+/** @type HTMLInputElement */
 const capoInput = document.getElementById("capo");
 const textFontSizeInput = document.getElementById("textfontsize");
+/** @type HTMLInputElement */
 const chordFontSizeInput = document.getElementById("chordfontsize");
+/** @type HTMLInputElement */
 const chordColorInput = document.getElementById("chordcolor");
+/** @type HTMLInputElement */
 const textColorInput = document.getElementById("textcolor");
+/** @type HTMLInputElement */
 const columnInput = document.getElementById("columncount");
+/** @type HTMLSelectElement */
 const notationInput = document.getElementById("notation");
+/** @type HTMLButtonElement */
 const printButton = document.getElementById("print");
+/** @type HTMLButtonElement */
 const readonlyButton = document.getElementById("readonly");
+/** @type HTMLButtonElement */
 const saveButton = document.getElementById("save");
+/** @type HTMLButtonElement */
 const deleteButton = document.getElementById("delete");
+/** @type HTMLInputElement */
 const chordNameInput = document.getElementById("chord-name");
+/** @type HTMLSelectElement */
 const chordSelectInput = document.getElementById("chord-select");
 
 if (!chordArea) {
@@ -21,6 +34,12 @@ if (!songRender) {
     console.error("No songRender");
 }
 
+class SongObject {
+    songchordname;
+    songchord;
+    notation;
+    capo;
+}
 
 class SongStorage {
     constructor(songKey, globalKey, currentKey) {
@@ -67,7 +86,14 @@ class SongStorage {
     }
 
     getSongIndexFromName(name) {
-        return name;
+        const songs = Object.entries(this.getAllSongsStorage());
+
+        for (const [key, song] of songs) {
+            if (song.songchordname === name) {
+                return key;
+            }
+        }
+        return null;
     }
 
     getSongInfoFromStorage(key) {
@@ -121,8 +147,11 @@ class SongStorage {
         return JSON.parse(window.localStorage.getItem(this.storageDataGlobalKey) || "{}");
     }
 
+    /**
+     *
+     * @returns {Object.<string,SongObject>}
+     */
     getAllSongsStorage() {
-
         return JSON.parse(window.localStorage.getItem(this.storageDataSongKey) || "{}");
     }
 
@@ -164,9 +193,6 @@ chordArea.ondrop = function (e) {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files);
 
-
-    console.log(files);
-
     files.forEach((file, idx) => {
 
         if (file.type !== "text/plain") {
@@ -175,46 +201,45 @@ chordArea.ondrop = function (e) {
             return;
         }
 
-        // Create new song
+        // Create new song or update if already recorded
         let songIndex = songStorage.getSongIndexFromName(file.name);
-        if (! songIndex) {
-            songIndex = this.getNewSongIndex();
+
+        if (!songIndex) {
+            songIndex = songStorage.getNewSongIndex();
             songStorage.recordSongInStorage("songchordname", file.name, songIndex);
-
         }
-
 
         const reader = new FileReader();
         reader.onload = function (e) {
-
             chordArea.classList.remove("dragover");
-
             songStorage.recordSongInStorage("songchord", e.target.result, songIndex);
             if (idx === files.length - 1) {
                 // Display last uploaded song
                 songStorage.currentSongIndex = songIndex;
                 resetSong();
                 updateSongSelector();
+                renderSong(e.target.result);
             }
         };
         reader.readAsText(file, "UTF-8");
     });
-
-
 };
 
-//-----------------------------------------
-// ----------- Chord song rendermanagement -----
-//-----------------------------------------
+//------------------------------------------------
+// ----------- Chord song render management -----
+//------------------------------------------------
 
 function renderChord(line) {
 
-    let chord = line.replaceAll("b", "♭").replaceAll("#", "♯");
+    let chord = line.replaceAll(/([A-G)])([b#])/ig, (s, p1, p2) => {
+        return p1 + p2.replace("b", "♭").replaceAll("#", "♯")
+    });
 
     chord = chord.replaceAll("maj7", "Δ");
     chord = chord.replaceAll("M7", "Δ");
     chord = chord.replaceAll("sus", "/");
     chord = chord.replaceAll(/x([1-9]+)/g, "×$1");
+
 
     return chord;
 }
@@ -223,6 +248,12 @@ function expSus(line) {
     let expLine = line.replaceAll(/((sus|\/|add)[0-9]+)/g, (s) => {
         return `<sup>${s}</sup>`;
     });
+
+
+    expLine = expLine.replaceAll(/^([A-G♭♯]+)\|-/ig, (s, p1) => {
+        return `<span class="tab-string">${p1}</span>|-`;
+    });
+
     expLine = expLine.replaceAll(/([♭♯])/g, (s) => {
         return `<sup class="notation">${s}</sup>`;
     });
@@ -231,14 +262,31 @@ function expSus(line) {
 
 function lineTranspose(line) {
     const capoValue = parseInt(capoInput.value) || 0;
-    const rawLine = line.replaceAll("♭", "b").replaceAll("♯", "#");
-    const tChords = rawLine.replaceAll(/([A-G][b#]?)/g, function (s) {
+    let rawLine = line.replaceAll("♭", "b").replaceAll("♯", "#");
+    let Elowercase = false;
+    if (isTabLine(line)) {
+        if (rawLine.match(/^e/)) {
+            rawLine = rawLine.replace(/^e/, "E");
+            Elowercase = true;
+        }
+        rawLine = rawLine.replaceAll(/([\-s])([0-9]+)/gu, function (s, p1, p2) {
+            return p1 + (parseInt(p2) - capoValue).toString();
+        });
+    }
+
+    rawLine = rawLine.replaceAll(/([A-G][b#]?)/g, function (s) {
         return noteTranspose(s, capoValue);
     });
-    const tChordsBB = tChords.replaceAll(/(~ ?)/gu, function () {
+    if (Elowercase) {
+        rawLine = rawLine.replace(/^[A-G]/, (s) => {
+            return s.toLowerCase();
+        });
+    }
+    rawLine = rawLine.replaceAll(/(~ ?)/gu, function () {
         return "";
     });
-    return tChordsBB.replaceAll(/([^ ]+%[^ ]*)/gu, function (s) {
+
+    return rawLine.replaceAll(/([^ ]+%[^ ]*)/gu, function (s) {
         return s.replace("%", "") + " ";
     });
 }
@@ -282,6 +330,7 @@ function writeCapo(capoValue) {
 function writeLineChord(line) {
     const p = document.createElement('p');
     p.classList.add("solo-chord");
+    if (isTabLine(line)) p.classList.add("solo-tab");
     p.innerHTML = expSus(escapeXml(renderChord(line)));
     songRender.appendChild(p);
 }
@@ -425,6 +474,13 @@ function renderSong(song) {
     });
 }
 
+function isTabLine(line) {
+    if (line.match(/^[A-Ga-g][♭♯b#]?\|-/)) {
+        return true;
+    }
+    return false;
+}
+
 function isChordLine(line) {
     line = line.replaceAll("maj7", "Δ");
     line = line.replaceAll("M7", "Δ");
@@ -434,6 +490,9 @@ function isChordLine(line) {
     line = line.replaceAll(/add[1-9]/g, "");
     line = line.replaceAll(/x[1-9]/g, "");
 
+    if (line.match(/^[A-Ge]\|-/)) {
+        return true;
+    }
     if (line.match(/[a-z]/)) {
         return false;
     }
@@ -520,7 +579,7 @@ function updateSongSelector() {
     );
 
     while (chordSelectInput.options.length > 0) {
-        chordSelectInput.remove();
+        chordSelectInput.remove(0);
     }
     let emptyOption = new Option("-", "");
     emptyOption.classList.add("option-edit");
@@ -570,14 +629,13 @@ function resetSong() {
 }
 
 function viewMode(readMode) {
-    const main = document.querySelector("main");
     if (readMode) {
         readonlyButton.classList.add("active");
-        main.classList.add("read-only");
+        document.body.classList.add("read-only");
 
     } else {
         readonlyButton.classList.remove("active");
-        main.classList.remove("read-only");
+        document.body.classList.remove("read-only");
     }
 }
 
