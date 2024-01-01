@@ -57,36 +57,46 @@ chordArea.ondragleave = () => {
 
 chordArea.ondrop = function (e) {
     e.preventDefault();
-    const file = e.dataTransfer.files[0];
+    const files = Array.from(e.dataTransfer.files);
 
 
-    if (file.type !== "text/plain") {
-        alert("Only text file can be dropped here");
-        chordArea.classList.remove("dragover");
-        return;
-    }
+    console.log(files);
 
-    // Create new song
-    currentSongIndex = null;
-    chordNameInput.value = file.name;
+    files.forEach((file, idx) => {
 
-    const iEvent = new InputEvent("change");
-    chordNameInput.dispatchEvent(iEvent);
+        if (file.type !== "text/plain") {
+            alert("Only text file can be dropped here");
+            chordArea.classList.remove("dragover");
+            return;
+        }
 
-    chordArea.dispatchEvent(iEvent);
+        // Create new song
+        const songIndex = getNewSongIndex();
+        recordSongInStorage("songchordname", file.name, songIndex);
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        chordArea.value = e.target.result;
+        const iEvent = new InputEvent("change");
+        // chordNameInput.dispatchEvent(iEvent);
+        // chordArea.dispatchEvent(iEvent);
 
-        chordArea.classList.remove("dragover");
-        const iEvent = new InputEvent("input");
+        const reader = new FileReader();
+        reader.onload = function (e) {
 
-        chordArea.dispatchEvent(iEvent);
+            chordArea.classList.remove("dragover");
+            const iEvent = new InputEvent("input");
 
-        updateSongSelector();
-    };
-    reader.readAsText(file, "UTF-8");
+            recordSongInStorage("songchord", e.target.result, songIndex);
+            if (idx === files.length - 1) {
+                // Display last uploaded song
+                currentSongIndex = songIndex;
+                resetSong();
+                updateSongSelector();
+            }
+        };
+        reader.readAsText(file, "UTF-8");
+    });
+
+
+
 };
 
 //-----------------------------------------
@@ -109,7 +119,7 @@ function expSus(line) {
     let expLine = line.replaceAll(/((sus|\/|add)[0-9]+)/g, (s) => {
         return `<sup>${s}</sup>`;
     });
-     expLine = expLine.replaceAll(/(♭|♯)/g, (s) => {
+    expLine = expLine.replaceAll(/(♭|♯)/g, (s) => {
         return `<sup class="notation">${s}</sup>`;
     });
     return expLine;
@@ -330,25 +340,32 @@ function isChordLine(line) {
 // ----------------------------- storage management  ------------
 // -----------------------------------------------------------------
 
-function recordSongInStorage(key, v) {
-    const songData = this.getAllSongsStorage();
+function recordSongInStorage(key, v, index = null) {
+    const songData = getAllSongsStorage();
+    let songIndex = index;
 
-    if (!currentSongIndex) {
-        currentSongIndex = Math.random().toString(32).slice(2);
+    if (index === null && !currentSongIndex) {
+        currentSongIndex = getNewSongIndex();
         window.localStorage.setItem(storageCurrentIndexKey, currentSongIndex);
     }
 
-    if (!songData[currentSongIndex]) {
-        songData[currentSongIndex] = {};
+    if (songIndex === null) songIndex = currentSongIndex;
+
+    if (!songData[songIndex]) {
+        songData[songIndex] = {};
     }
-    songData[currentSongIndex][key] = v;
+    songData[songIndex][key] = v;
 
     window.localStorage.setItem(storageDataSongKey, JSON.stringify(songData));
 
 }
 
+function getNewSongIndex() {
+    return Math.random().toString(32).slice(2);
+}
+
 function getSongInfoFromStorage(key) {
-    const songData = this.getAllSongsStorage();
+    const songData = getAllSongsStorage();
 
     if (!currentSongIndex || !songData[currentSongIndex]) {
         return undefined;
@@ -360,11 +377,11 @@ function getSongInfoFromStorage(key) {
 
 
 function getGlobalInfoFromStorage(key) {
-    const globData = this.getAllGlobalStorage();
+    const globData = getAllGlobalStorage();
     return globData[key];
 }
 function setGlobalInfoIntoStorage(key, value) {
-    const globData = this.getAllGlobalStorage();
+    const globData = getAllGlobalStorage();
     globData[key] = value;
 
     window.localStorage.setItem(storageDataGlobalKey, JSON.stringify(globData));
@@ -373,7 +390,7 @@ function setGlobalInfoIntoStorage(key, value) {
 
 function deleteCurrentSong() {
 
-    const songData = this.getAllSongsStorage();
+    const songData = getAllSongsStorage();
     if (currentSongIndex) {
 
         if (songData[currentSongIndex]) {
@@ -475,7 +492,7 @@ function updateSongSelector() {
 
     // Sort by song title
     const recorderSongs = Object.entries(getAllSongsStorage()).sort(
-        ([, a], [, b]) => a.songchordname.localeCompare(b.songchordname)
+        ([, a], [, b]) => a.songchordname?.localeCompare(b.songchordname)
     );
 
     while (chordSelectInput.options.length > 0) {
