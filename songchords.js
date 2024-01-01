@@ -21,13 +21,118 @@ if (!songRender) {
     console.error("No songRender");
 }
 
-const storageDataSongKey = "songs";
-const storageDataGlobalKey = "global";
-const storageCurrentIndexKey = "currentSongIndex";
-let currentSongIndex = window.localStorage.getItem(storageCurrentIndexKey);
+
+class SongStorage {
+    constructor(songKey, globalKey, currentKey) {
+        this.storageDataSongKey = songKey;
+        this.storageDataGlobalKey = globalKey;
+        this.storageCurrentIndexKey = currentKey;
+
+    }
+
+    get currentSongIndex() {
+        return window.localStorage.getItem(this.storageCurrentIndexKey);
+    }
+
+    set currentSongIndex(v) {
+        return window.localStorage.setItem(this.storageCurrentIndexKey, v);
+    }
+
+    // -----------------------------------------------------------------
+    // ----------------------------- storage management  ------------
+    // -----------------------------------------------------------------
+
+    recordSongInStorage(key, v, index = null) {
+        const songData = this.getAllSongsStorage();
+        let songIndex = index;
+
+        if (index === null && !this.currentSongIndex) {
+            this.currentSongIndex = this.getNewSongIndex();
+            window.localStorage.setItem(this.storageCurrentIndexKey, this.currentSongIndex);
+        }
+
+        if (songIndex === null) songIndex = this.currentSongIndex;
+
+        if (!songData[songIndex]) {
+            songData[songIndex] = {};
+        }
+        songData[songIndex][key] = v;
+
+        window.localStorage.setItem(this.storageDataSongKey, JSON.stringify(songData));
+
+    }
+
+    getNewSongIndex() {
+        return Math.random().toString(32).slice(2);
+    }
+
+    getSongIndexFromName(name) {
+        return name;
+    }
+
+    getSongInfoFromStorage(key) {
+        const songData = this.getAllSongsStorage();
+
+        if (!this.currentSongIndex || !songData[this.currentSongIndex]) {
+            return undefined;
+        }
+
+        return songData[this.currentSongIndex][key];
+    }
+
+
+    getGlobalInfoFromStorage(key) {
+        const globData = this.getAllGlobalStorage();
+        return globData[key];
+    }
+
+    setGlobalInfoIntoStorage(key, value) {
+        const globData = this.getAllGlobalStorage();
+        globData[key] = value;
+
+        window.localStorage.setItem(this.storageDataGlobalKey, JSON.stringify(globData));
+    }
+
+
+    deleteCurrentSong() {
+
+        const songData = this.getAllSongsStorage();
+        if (this.currentSongIndex) {
+
+            if (songData[this.currentSongIndex]) {
+                delete songData[this.currentSongIndex];
+
+            }
+
+            const keys = Object.keys(songData);
+
+            if (keys.length > 0) {
+                this.currentSongIndex = keys[0];
+            }
+
+            window.localStorage.setItem(this.storageDataSongKey, JSON.stringify(songData));
+
+        }
+    }
+
+
+    getAllGlobalStorage() {
+
+        return JSON.parse(window.localStorage.getItem(this.storageDataGlobalKey) || "{}");
+    }
+
+    getAllSongsStorage() {
+
+        return JSON.parse(window.localStorage.getItem(this.storageDataSongKey) || "{}");
+    }
+
+}
+
+const songStorage = new SongStorage("songs", "global", "currentSongIndex");
+
 
 function downloadFileText(filename, text) {
-    var element = document.createElement('a');
+    const element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
     element.setAttribute('download', filename);
 
@@ -71,30 +176,29 @@ chordArea.ondrop = function (e) {
         }
 
         // Create new song
-        const songIndex = getNewSongIndex();
-        recordSongInStorage("songchordname", file.name, songIndex);
+        let songIndex = songStorage.getSongIndexFromName(file.name);
+        if (! songIndex) {
+            songIndex = this.getNewSongIndex();
+            songStorage.recordSongInStorage("songchordname", file.name, songIndex);
 
-        const iEvent = new InputEvent("change");
-        // chordNameInput.dispatchEvent(iEvent);
-        // chordArea.dispatchEvent(iEvent);
+        }
+
 
         const reader = new FileReader();
         reader.onload = function (e) {
 
             chordArea.classList.remove("dragover");
-            const iEvent = new InputEvent("input");
 
-            recordSongInStorage("songchord", e.target.result, songIndex);
+            songStorage.recordSongInStorage("songchord", e.target.result, songIndex);
             if (idx === files.length - 1) {
                 // Display last uploaded song
-                currentSongIndex = songIndex;
+                songStorage.currentSongIndex = songIndex;
                 resetSong();
                 updateSongSelector();
             }
         };
         reader.readAsText(file, "UTF-8");
     });
-
 
 
 };
@@ -119,7 +223,7 @@ function expSus(line) {
     let expLine = line.replaceAll(/((sus|\/|add)[0-9]+)/g, (s) => {
         return `<sup>${s}</sup>`;
     });
-    expLine = expLine.replaceAll(/(♭|♯)/g, (s) => {
+    expLine = expLine.replaceAll(/([♭♯])/g, (s) => {
         return `<sup class="notation">${s}</sup>`;
     });
     return expLine;
@@ -131,13 +235,12 @@ function lineTranspose(line) {
     const tChords = rawLine.replaceAll(/([A-G][b#]?)/g, function (s) {
         return noteTranspose(s, capoValue);
     });
-    const tChordsBB = tChords.replaceAll(/(~ ?)/gu, function (s) {
+    const tChordsBB = tChords.replaceAll(/(~ ?)/gu, function () {
         return "";
     });
-    const tChordsCC = tChordsBB.replaceAll(/([^ ]+%[^ ]*)/gu, function (s) {
+    return tChordsBB.replaceAll(/([^ ]+%[^ ]*)/gu, function (s) {
         return s.replace("%", "") + " ";
-    })
-    return tChordsCC;
+    });
 }
 
 function noteTranspose(note, capoValue) {
@@ -175,12 +278,14 @@ function writeCapo(capoValue) {
     p.appendChild(sp);
     songRender.appendChild(p);
 }
+
 function writeLineChord(line) {
     const p = document.createElement('p');
     p.classList.add("solo-chord");
     p.innerHTML = expSus(escapeXml(renderChord(line)));
     songRender.appendChild(p);
 }
+
 function writeLineText(line, isSong) {
     let p = document.createElement('p');
     let isLineSong = false;
@@ -214,16 +319,20 @@ function writeLineText(line, isSong) {
 }
 
 
-
 function escapeXml(unsafe) {
     if (!unsafe) return '<ins>&nbsp;</ins>';
     return unsafe.replaceAll(/[<>&'"]/g, function (c) {
         switch (c) {
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '&': return '&amp;';
-            case '\'': return '&apos;';
-            case '"': return '&quot;';
+            case '<':
+                return '&lt;';
+            case '>':
+                return '&gt;';
+            case '&':
+                return '&amp;';
+            case '\'':
+                return '&apos;';
+            case '"':
+                return '&quot;';
         }
     });
 }
@@ -253,7 +362,7 @@ function writeMergeChordLine(chordLine, songText) {
     }
 
     // Add semi-quadratin spaces to simulate appropriate length of spaces
-    songLine = songLine.replaceAll(/ ([ ]+)/g, (reg) => {
+    songLine = songLine.replaceAll(/ ( +)/g, (reg) => {
         let spaces = '';
         for (let i = 0; i < reg.length; i++) spaces += '&ensp;';
         return spaces;
@@ -264,6 +373,7 @@ function writeMergeChordLine(chordLine, songText) {
 
     songRender.appendChild(p);
 }
+
 /**
  * Main function to render raw text to printed text
  */
@@ -279,7 +389,7 @@ function renderSong(song) {
     window.document.title = chordNameInput.value.replace(".txt", "");
 
 
-    lines.forEach((line, idx) => {
+    lines.forEach((line) => {
         if (line.trim().length > 0) {
             if (isChordLine(line)) {
                 if (!capoIsWrote && capoInput.value > 0) {
@@ -336,92 +446,6 @@ function isChordLine(line) {
     return false;
 }
 
-// -----------------------------------------------------------------
-// ----------------------------- storage management  ------------
-// -----------------------------------------------------------------
-
-function recordSongInStorage(key, v, index = null) {
-    const songData = getAllSongsStorage();
-    let songIndex = index;
-
-    if (index === null && !currentSongIndex) {
-        currentSongIndex = getNewSongIndex();
-        window.localStorage.setItem(storageCurrentIndexKey, currentSongIndex);
-    }
-
-    if (songIndex === null) songIndex = currentSongIndex;
-
-    if (!songData[songIndex]) {
-        songData[songIndex] = {};
-    }
-    songData[songIndex][key] = v;
-
-    window.localStorage.setItem(storageDataSongKey, JSON.stringify(songData));
-
-}
-
-function getNewSongIndex() {
-    return Math.random().toString(32).slice(2);
-}
-
-function getSongInfoFromStorage(key) {
-    const songData = getAllSongsStorage();
-
-    if (!currentSongIndex || !songData[currentSongIndex]) {
-        return undefined;
-    }
-
-    return songData[currentSongIndex][key];
-}
-
-
-
-function getGlobalInfoFromStorage(key) {
-    const globData = getAllGlobalStorage();
-    return globData[key];
-}
-function setGlobalInfoIntoStorage(key, value) {
-    const globData = getAllGlobalStorage();
-    globData[key] = value;
-
-    window.localStorage.setItem(storageDataGlobalKey, JSON.stringify(globData));
-}
-
-
-function deleteCurrentSong() {
-
-    const songData = getAllSongsStorage();
-    if (currentSongIndex) {
-
-        if (songData[currentSongIndex]) {
-            delete songData[currentSongIndex];
-
-        }
-
-        const keys = Object.keys(songData);
-
-        if (keys.length > 0) {
-            currentSongIndex = keys[0];
-        }
-
-        window.localStorage.setItem(storageDataSongKey, JSON.stringify(songData));
-
-    }
-}
-
-
-
-function getAllGlobalStorage() {
-
-    const globalData = JSON.parse(window.localStorage.getItem(storageDataGlobalKey) || "{}");
-    return globalData;
-}
-
-function getAllSongsStorage() {
-
-    const songData = JSON.parse(window.localStorage.getItem(storageDataSongKey) || "{}");
-    return songData;
-}
 
 // ----------------------------
 // --------- Update Css -------
@@ -488,22 +512,22 @@ It's incredible...
 
 function updateSongSelector() {
 
-    const readOnlyMode = getGlobalInfoFromStorage("readMode");
+    const readOnlyMode = songStorage.getGlobalInfoFromStorage("readMode");
 
     // Sort by song title
-    const recorderSongs = Object.entries(getAllSongsStorage()).sort(
+    const recorderSongs = Object.entries(songStorage.getAllSongsStorage()).sort(
         ([, a], [, b]) => a.songchordname?.localeCompare(b.songchordname)
     );
 
     while (chordSelectInput.options.length > 0) {
-        chordSelectInput.remove(0);
+        chordSelectInput.remove();
     }
     let emptyOption = new Option("-", "");
     emptyOption.classList.add("option-edit");
     emptyOption.classList.add("option-fake");
     chordSelectInput.add(emptyOption)
     for (const [key, value] of recorderSongs) {
-        if (key !== currentSongIndex) {
+        if (key !== songStorage.currentSongIndex) {
             const newOption = new Option(value.songchordname, key);
             chordSelectInput.add(newOption)
         } else {
@@ -531,17 +555,18 @@ function updateSongSelector() {
     chordSelectInput.add(addOption)
 
 }
-function resetSong() {
-    chordArea.value = getSongInfoFromStorage("songchord") || favoriteSong;
-    capoInput.value = getSongInfoFromStorage("capo") || null;
-    notationInput.value = getSongInfoFromStorage("notation") || '';
-    chordNameInput.value = getSongInfoFromStorage("songchordname") || "MySong";
 
-    textFontSizeInput.value = getGlobalInfoFromStorage("textfontsize") || 12;
-    chordFontSizeInput.value = getGlobalInfoFromStorage("chordfontsize") || 0;
-    chordColorInput.value = getGlobalInfoFromStorage("chordcolor") || '#188B18';
-    textColorInput.value = getGlobalInfoFromStorage("textcolor") || '#23239F';
-    columnInput.value = getGlobalInfoFromStorage("column") || 1;
+function resetSong() {
+    chordArea.value = songStorage.getSongInfoFromStorage("songchord") || favoriteSong;
+    capoInput.value = songStorage.getSongInfoFromStorage("capo") || null;
+    notationInput.value = songStorage.getSongInfoFromStorage("notation") || '';
+    chordNameInput.value = songStorage.getSongInfoFromStorage("songchordname") || "MySong";
+
+    textFontSizeInput.value = songStorage.getGlobalInfoFromStorage("textfontsize") || 12;
+    chordFontSizeInput.value = songStorage.getGlobalInfoFromStorage("chordfontsize") || 0;
+    chordColorInput.value = songStorage.getGlobalInfoFromStorage("chordcolor") || '#188B18';
+    textColorInput.value = songStorage.getGlobalInfoFromStorage("textcolor") || '#23239F';
+    columnInput.value = songStorage.getGlobalInfoFromStorage("column") || 1;
 }
 
 function viewMode(readMode) {
@@ -558,51 +583,49 @@ function viewMode(readMode) {
 
 updateSongSelector();
 resetSong();
-viewMode(getGlobalInfoFromStorage("readMode") || false);
+viewMode(songStorage.getGlobalInfoFromStorage("readMode") || false);
 
 
 // -------------------
 // Event Listeners
 // -------------------
 
-printButton.addEventListener("click", function (ev) {
+printButton.addEventListener("click", function () {
     window.print();
 
 });
-saveButton.addEventListener("click", function (ev) {
+saveButton.addEventListener("click", function () {
     saveSong();
 });
 
 
-readonlyButton.addEventListener("click", function (ev) {
-    if (getGlobalInfoFromStorage("readMode")) {
-        setGlobalInfoIntoStorage("readMode", false);
+readonlyButton.addEventListener("click", function () {
+    if (songStorage.getGlobalInfoFromStorage("readMode")) {
+        songStorage.setGlobalInfoIntoStorage("readMode", false);
         viewMode(false);
     } else {
-        setGlobalInfoIntoStorage("readMode", true);
+        songStorage.setGlobalInfoIntoStorage("readMode", true);
         viewMode(true);
-
-
     }
     updateSongSelector();
 
 });
 
-chordNameInput.addEventListener("change", function (ev) {
+chordNameInput.addEventListener("change", function () {
     const v = this.value.trim();
-    recordSongInStorage("songchordname", v);
+    songStorage.recordSongInStorage("songchordname", v);
 
 });
-chordArea.addEventListener("input", function (ev) {
+chordArea.addEventListener("input", function () {
     const v = this.value.replaceAll("\t", "        ");
-    recordSongInStorage("songchord", v);
+    songStorage.recordSongInStorage("songchord", v);
     renderSong(v);
 
 });
 
-capoInput.addEventListener("change", function (ev) {
+capoInput.addEventListener("change", function () {
 
-    recordSongInStorage("capo", this.value);
+    songStorage.recordSongInStorage("capo", this.value);
 
     if (this.value > 0) {
         if (notationInput.value === "") {
@@ -616,49 +639,47 @@ capoInput.addEventListener("change", function (ev) {
     renderSong(chordArea.value);
 
 
-
 });
-textFontSizeInput.addEventListener("change", function (ev) {
-    setGlobalInfoIntoStorage("textfontsize", this.value);
+textFontSizeInput.addEventListener("change", function () {
+    songStorage.setGlobalInfoIntoStorage("textfontsize", this.value);
     renderSong(chordArea.value);
 });
-chordFontSizeInput.addEventListener("change", function (ev) {
-    setGlobalInfoIntoStorage("chordfontsize", this.value);
+chordFontSizeInput.addEventListener("change", function () {
+    songStorage.setGlobalInfoIntoStorage("chordfontsize", this.value);
     renderSong(chordArea.value);
 });
-chordColorInput.addEventListener("input", function (ev) {
-    setGlobalInfoIntoStorage("chordcolor", this.value);
+chordColorInput.addEventListener("input", function () {
+    songStorage.setGlobalInfoIntoStorage("chordcolor", this.value);
     updateStyle();
 });
-textColorInput.addEventListener("input", function (ev) {
-    setGlobalInfoIntoStorage("textcolor", this.value);
+textColorInput.addEventListener("input", function () {
+    songStorage.setGlobalInfoIntoStorage("textcolor", this.value);
     updateStyle();
 });
-columnInput.addEventListener("change", function (ev) {
-    setGlobalInfoIntoStorage("column", this.value);
+columnInput.addEventListener("change", function () {
+    songStorage.setGlobalInfoIntoStorage("column", this.value);
     updateStyle();
 });
-notationInput.addEventListener("change", function (ev) {
-    recordSongInStorage("notation", this.value);
+notationInput.addEventListener("change", function () {
+    songStorage.recordSongInStorage("notation", this.value);
     renderSong(chordArea.value);
 });
 
 
-chordSelectInput.addEventListener("change", function (ev) {
+chordSelectInput.addEventListener("change", function () {
     if (this.value === "+") {
-        currentSongIndex = null;
+        songStorage.currentSongIndex = null;
         chordNameInput.value = ""
         chordArea.value = "";
 
 
-        recordSongInStorage("songchordname", chordNameInput.value);
-        recordSongInStorage("songchord", chordArea.value);
+        songStorage.recordSongInStorage("songchordname", chordNameInput.value);
+        songStorage.recordSongInStorage("songchord", chordArea.value);
         chordNameInput.focus();
         updateSongSelector();
     } else {
-        currentSongIndex = this.value;
+        songStorage.currentSongIndex = this.value;
 
-        window.localStorage.setItem(storageCurrentIndexKey, currentSongIndex);
         resetSong();
         updateSongSelector();
     }
@@ -674,9 +695,9 @@ document.addEventListener('keydown', e => {
     }
 });
 
-deleteButton.addEventListener('click', e => {
+deleteButton.addEventListener('click', () => {
     if (window.confirm(`Confirm delete ${chordNameInput.value} ?`)) {
-        deleteCurrentSong();
+        songStorage.deleteCurrentSong();
 
         updateSongSelector();
         resetSong();
