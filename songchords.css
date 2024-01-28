@@ -96,8 +96,16 @@ option.option-separator {
 }
 
 
-button.active {
+button.active-read {
+    border: solid 1px #3b3bc8;
     background-color: rgb(4, 79, 129);
+    color: white;
+}
+
+
+button.active-write {
+    border: solid 1px #c8bf3b;
+    background-color: #dc8c58;
     color: white;
 }
 
@@ -250,13 +258,39 @@ main .button-delete button {
     break-after: page;
 }
 
+.page-footer {
+    text-align: right;
+}
+
+/* ==============
+   WRITE ONLY MODE
+================== */
+
+body.write-only main {
+    flex-direction: column;
+}
+
+body.read-only .song-write {
+    flex: 0;
+}
+
+body.write-only .song-render {
+    display: none;
+}
+
+
+body.write-only main textarea {
+    padding: 1rem;
+}
+body.write-only header label,
+body.write-only header .button-edit-print
+{
+    display:none;
+}
 /* ==============
    READ ONLY MODE
 ================== */
 
-.page-footer {
-    text-align: right;
-}
 
 body.read-only main {
     flex-direction: column;

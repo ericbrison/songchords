@@ -50,7 +50,8 @@ class SongStorage {
     }
 
     get currentSongIndex() {
-        return window.localStorage.getItem(this.storageCurrentIndexKey);
+        const value= window.localStorage.getItem(this.storageCurrentIndexKey);
+        return (value === "null" ? null : value) 
     }
 
     set currentSongIndex(v) {
@@ -65,7 +66,7 @@ class SongStorage {
         const songData = this.getAllSongsStorage();
         let songIndex = index;
 
-        if (index === null && !this.currentSongIndex) {
+        if (index === null && this.currentSongIndex === null) {
             this.currentSongIndex = this.getNewSongIndex();
             window.localStorage.setItem(this.storageCurrentIndexKey, this.currentSongIndex);
         }
@@ -237,7 +238,7 @@ function renderChord(line) {
 
     chord = chord.replaceAll("maj7", "Δ");
     chord = chord.replaceAll("M7", "Δ");
-    chord = chord.replaceAll("sus", "/");
+    // chord = chord.replaceAll("sus", "/");
     chord = chord.replaceAll(/x([1-9]+)/g, "×$1");
 
 
@@ -282,7 +283,7 @@ function lineTranspose(line) {
             return s.toLowerCase();
         });
     }
-    rawLine = rawLine.replaceAll(/(~ ?)/gu, function () {
+    rawLine = rawLine.replaceAll(/(ø ?)/gu, function () {
         return "";
     });
 
@@ -310,7 +311,7 @@ function noteTranspose(note, capoValue) {
         tNote += "%";
     }
     if (note.length === 1 && tNote.length === 2) {
-        tNote += "~";
+        tNote += "ø";
     }
 
     return tNote;
@@ -330,8 +331,14 @@ function writeCapo(capoValue) {
 function writeLineChord(line) {
     const p = document.createElement('p');
     p.classList.add("solo-chord");
-    if (isTabLine(line)) p.classList.add("solo-tab");
-    p.innerHTML = expSus(escapeXml(renderChord(line)));
+    if (isTabLine(line)) {
+        p.classList.add("solo-tab");
+
+        p.innerHTML = escapeXml(renderChord(line));
+    } else {
+
+        p.innerHTML = expSus(escapeXml(renderChord(line)));
+    }
     songRender.appendChild(p);
 }
 
@@ -354,6 +361,11 @@ function writeLineText(line, isSong) {
             } else {
                 isLineSong = true;
             }
+            line = line.replaceAll(/ ( +)/g, (reg) => {
+                let spaces = '';
+                for (let i = 0; i < reg.length; i++) spaces += ' ';
+                return spaces;
+            });
             p.textContent = line;
 
         }
@@ -488,6 +500,7 @@ function isChordLine(line) {
     line = line.replaceAll(/([A-G])b/g, "$1");
     line = line.replaceAll(/sus[1-9]/g, "");
     line = line.replaceAll(/add[1-9]/g, "");
+    line = line.replaceAll(/dim/g, "");
     line = line.replaceAll(/x[1-9]/g, "");
 
     if (line.match(/^[A-Ge]\|-/)) {
@@ -571,7 +584,7 @@ It's incredible...
 
 function updateSongSelector() {
 
-    const readOnlyMode = songStorage.getGlobalInfoFromStorage("readMode");
+    const readOnlyMode = songStorage.getGlobalInfoFromStorage("readMode") === 1;
 
     // Sort by song title
     const recorderSongs = Object.entries(songStorage.getAllSongsStorage()).sort(
@@ -628,20 +641,38 @@ function resetSong() {
     columnInput.value = songStorage.getGlobalInfoFromStorage("column") || 1;
 }
 
+/**
+ * 0 : Write & Read
+ * 1 : Read Only
+ * 2 : Write Only
+ * @param {0,1,2} readMode 
+ */
 function viewMode(readMode) {
-    if (readMode) {
-        readonlyButton.classList.add("active");
-        document.body.classList.add("read-only");
-
-    } else {
-        readonlyButton.classList.remove("active");
-        document.body.classList.remove("read-only");
+    switch (readMode) {
+        case 1:
+            readonlyButton.classList.remove("active-write");
+            readonlyButton.classList.add("active-read");
+            document.body.classList.remove("write-only");
+            document.body.classList.add("read-only");
+            break;
+        case 2:
+            readonlyButton.classList.remove("active-read");
+            readonlyButton.classList.add("active-write");
+            document.body.classList.remove("read-only");
+            document.body.classList.add("write-only");
+            break;
+        default:
+            readonlyButton.classList.remove("active-read");
+            readonlyButton.classList.remove("active-write");
+            document.body.classList.remove("read-only");
+            document.body.classList.remove("write-only");
     }
+
 }
 
 updateSongSelector();
 resetSong();
-viewMode(songStorage.getGlobalInfoFromStorage("readMode") || false);
+viewMode(songStorage.getGlobalInfoFromStorage("readMode") || 0);
 
 
 // -------------------
@@ -658,13 +689,11 @@ saveButton.addEventListener("click", function () {
 
 
 readonlyButton.addEventListener("click", function () {
-    if (songStorage.getGlobalInfoFromStorage("readMode")) {
-        songStorage.setGlobalInfoIntoStorage("readMode", false);
-        viewMode(false);
-    } else {
-        songStorage.setGlobalInfoIntoStorage("readMode", true);
-        viewMode(true);
-    }
+    const readMode = songStorage.getGlobalInfoFromStorage("readMode") || 0;
+    const newReadMode = (readMode + 1) % 3;
+    songStorage.setGlobalInfoIntoStorage("readMode", newReadMode);
+    viewMode(newReadMode);
+
     updateSongSelector();
 
 });
