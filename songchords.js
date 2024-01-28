@@ -142,6 +142,7 @@ class SongStorage {
         } else {
             if (songData["null"]) {
                 delete songData["null"];
+                window.localStorage.setItem(this.storageDataSongKey, JSON.stringify(songData));
             }
         }
     }
