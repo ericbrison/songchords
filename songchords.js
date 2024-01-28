@@ -139,6 +139,10 @@ class SongStorage {
 
             window.localStorage.setItem(this.storageDataSongKey, JSON.stringify(songData));
 
+        } else {
+            if (songData["null"]) {
+                delete songData["null"];
+            }
         }
     }
 
