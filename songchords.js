@@ -458,6 +458,7 @@ function renderSong(song) {
     lines.forEach((line) => {
         if (line.trim().length > 0) {
             if (isChordLine(line)) {
+                line = line.replace("♪", " ");
                 if (!capoIsWrote && capoInput.value > 0) {
                     writeCapo(capoInput.value);
                     capoIsWrote = true;
@@ -511,6 +512,10 @@ function isChordLine(line) {
     if (line.match(/^[A-Ge]\|-/)) {
         return true;
     }
+    if (line.match(/♪/)) {
+        return true;
+    }
+
     if (line.match(/[a-z]/)) {
         return false;
     }
