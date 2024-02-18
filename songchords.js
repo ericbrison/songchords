@@ -271,17 +271,13 @@ function lineTranspose(line) {
     let rawLine = line.replaceAll("♭", "b").replaceAll("♯", "#");
     let Elowercase = false;
     if (isTabLine(line)) {
-        if (rawLine.match(/^e/)) {
-            rawLine = rawLine.replace(/^e/, "E");
-            Elowercase = true;
-        }
-        rawLine = rawLine.replaceAll(/([\-s])([0-9]+)/gu, function (s, p1, p2) {
-            return p1 + (parseInt(p2) - capoValue).toString();
-        });
+        // No transpose tabLine
+      
+        return rawLine;
     }
 
     rawLine = rawLine.replaceAll(/([A-G][b#]?)/g, function (s) {
-        return noteTranspose(s, capoValue);
+        return noteTranspose(s);
     });
     if (Elowercase) {
         rawLine = rawLine.replace(/^[A-G]/, (s) => {
@@ -297,9 +293,10 @@ function lineTranspose(line) {
     });
 }
 
-function noteTranspose(note, capoValue) {
+function noteTranspose(note) {
     const gammeB = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
     const gammeD = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
+    const capoValue = parseInt(capoInput.value) || 0;
     let index = gammeB.findIndex((v) => v === note);
     if (index === -1) {
         index = gammeD.findIndex((v) => v === note);
@@ -351,6 +348,7 @@ function writeLineText(line, isSong) {
     let p = document.createElement('p');
     let isLineSong = false;
 
+    
 
     if (line.trim() === "") {
         p = document.createElement('br');
@@ -371,7 +369,10 @@ function writeLineText(line, isSong) {
                 for (let i = 0; i < reg.length; i++) spaces += ' ';
                 return spaces;
             });
-            p.textContent = line;
+            
+            let htmlLine = escapeXml(line);
+            htmlLine = this.replaceNoteInBrackets(htmlLine, true);
+            p.innerHTML = htmlLine;
 
         }
     }
@@ -379,6 +380,9 @@ function writeLineText(line, isSong) {
         p.classList.add("follow-song");
     } else {
         p.classList.add("solo-text");
+    }
+    if (isTextLine(line)) {
+        p.classList.add("notation-text");
     }
     songRender.appendChild(p);
     return isLineSong && isSong;
@@ -414,7 +418,7 @@ function writeMergeChordLine(chordLine, songText) {
     for (let i = 0; i < lineLenght; i++) {
         if (chordLine[i] && chordLine[i] !== ' ' && idxChord <= i) {
             idxChord = i;
-            songLine += '<span>';
+            songLine += '<span class="chord">';
             let chordPart = '';
             while (chordLine[idxChord] && chordLine[idxChord] !== ' ') {
                 chordPart += escapeXml(chordLine[idxChord]);
@@ -434,10 +438,25 @@ function writeMergeChordLine(chordLine, songText) {
         return spaces;
     });
 
+    
+    songLine = this.replaceNoteInBrackets(songLine, true);
+
     p.innerHTML = songLine;
 
 
     songRender.appendChild(p);
+}
+
+function replaceNoteInBrackets(line, inHtml) {
+    return line.replaceAll(/\[([A-G][b#]?)([1-9a-zA-Z/]{0,4})\]/g, (s, note, end) => {
+        console.log(s);
+        const tNote = noteTranspose(note).replaceAll(/(ø?)/gu, "");
+        if (inHtml) {
+            return `<span class="inline-chord">${tNote+end}</span>`;
+        } else {
+            return tNote+end;
+        }
+    });
 }
 
 /**
@@ -457,6 +476,9 @@ function renderSong(song) {
 
     lines.forEach((line) => {
         if (line.trim().length > 0) {
+            if (isTextLine(line)) {
+                previousLineChord = "";
+            }
             if (isChordLine(line)) {
                 line = line.replace("♪", " ");
                 if (!capoIsWrote && capoInput.value > 0) {
@@ -499,8 +521,16 @@ function isTabLine(line) {
     return false;
 }
 
+
+function isTextLine(line) {
+    if (line.trim().match(/\(.*\)$/)) {
+        return true;
+    }
+    return false;
+}
+
 function isChordLine(line) {
-    line = line.replaceAll("maj7", "Δ");
+    line = line.replaceAll("maj", "Δ");
     line = line.replaceAll("M7", "Δ");
     line = line.replaceAll(/([A-G]).?m/g, "$1");
     line = line.replaceAll(/([A-G])b/g, "$1");

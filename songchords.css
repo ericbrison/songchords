@@ -62,9 +62,17 @@ header .button {
     text-align: right;
 }
 
-header button {
+
+header.chord-header button {
     height: 1.5rem;
     min-width: 2rem;
+}
+
+header.toolbar button {
+    height: 2.5rem;
+    min-width: 3rem;
+    font-size: 1.5rem;
+    margin-left: 1rem;
 }
 
 
@@ -189,13 +197,20 @@ main .button-delete button {
     padding-top: var(--chord-font-size);
 }
 
-.song-render .song-text > span {
+.song-render .song-text > span.chord {
     color: var(--chord-color);
     position: absolute;
     transform: translate(0, calc(var(--chord-font-size) * -1));
     font-size: var(--chord-font-size);
 }
 
+
+.song-render .song-text > span.inline-chord,
+.song-render .inline-chord {
+    color: var(--chord-color);
+    position: unset;
+    
+}
 
 .song-render sup {
     vertical-align: text-top;
@@ -234,7 +249,10 @@ main .button-delete button {
 .song-render .solo-text {
     color: var(--text-color);
 }
-
+.song-render .solo-text.notation-text {
+    font-style: italic;
+    margin-left: 1rem;
+}
 .song-render .solo-chord + .song-text {
     margin-top: 0.6rem;
 }
