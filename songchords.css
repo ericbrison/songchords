@@ -190,11 +190,14 @@ main .button-delete button {
 .song-render p {
     margin: 0 0 0.3rem 0;
     white-space: pre;
+    overflow: hidden;
+    text-overflow: ellipsis;
     line-height: 2rem;
 }
 
 .song-render .song-text {
     padding-top: var(--chord-font-size);
+    position: relative;
 }
 
 .song-render .song-text>span.chord {
@@ -219,7 +222,7 @@ main .button-delete button {
 
 
 .song-render sup.notation {
-    font-size: inherit;
+   /* font-size: inherit;*/
     font-family: auto, sans-serif;
 }
 
@@ -233,7 +236,7 @@ main .button-delete button {
 }
 
 .song-render .solo-chord sup {
-    font-size: inherit;
+   /* font-size: inherit; */
 }
 
 .song-render .solo-chord.solo-tab {
@@ -250,6 +253,7 @@ main .button-delete button {
 
 .song-render .solo-text {
     color: var(--text-color);
+    white-space: normal;
 }
 
 .song-render .solo-text.notation-text {
@@ -267,7 +271,7 @@ main .button-delete button {
     column-count: var(--column-count);
     column-fill: balance;
     column-rule: dashed 2px rgb(118, 118, 125);
-    width: fit-content;
+    width: 100%;
 }
 
 .song-render-inside.column .page-break {
@@ -290,6 +294,7 @@ main .button-delete button {
     text-align: center;
     font-style: italic;
     font-size: 80%;
+    font-weight: normal;
 }
 
 .separator::before,
@@ -315,9 +320,6 @@ body.write-only main {
     flex-direction: column;
 }
 
-body.read-only .song-write {
-    flex: 0;
-}
 
 body.write-only .song-render {
     display: none;
@@ -349,6 +351,7 @@ body.read-only .song-write {
 body.read-only .song-render {
     width: 100%;
     padding: 1rem;
+    flex: 1;
 }
 
 
@@ -376,6 +379,7 @@ body.read-only main header select {
 
 body.read-only main .song-render-inside.column {
     width: auto;
+    height: 100%
 }
 
 body.read-only main .song-render-inside.column .page-break,
@@ -394,6 +398,12 @@ main option:disabled {
     color: white;
 }
 
+footer.print-footer {
+    display: none;
+}
+
+
+
 @page {
     margin: 1.5cm;
 }
@@ -402,7 +412,7 @@ main option:disabled {
 @media print {
 
     .song-render {
-        width: 20cm;
+        width: 100%;
     }
 
     .song-render,
@@ -430,7 +440,8 @@ main option:disabled {
         column-count: var(--column-count);
         column-rule: solid 1px rgb(118, 118, 125);
         border: none;
-        width: unset;
+        max-width: 100vw;
+        /*width: calc( 100% / var(--column-count));*/
     }
 
 
@@ -441,9 +452,12 @@ main option:disabled {
         border-right: none;
     }
 
-    .page-footer {
+    .song-render p.page-footer {
         position: fixed;
-        bottom: 0;
+        bottom: -0.6rem;
         right: 1rem;
+        font-size: 80%;
+        color: grey;
+        font-weight: normal;
     }
 }

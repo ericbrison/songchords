@@ -50,8 +50,8 @@ class SongStorage {
     }
 
     get currentSongIndex() {
-        const value= window.localStorage.getItem(this.storageCurrentIndexKey);
-        return (value === "null" ? null : value) 
+        const value = window.localStorage.getItem(this.storageCurrentIndexKey);
+        return (value === "null" ? null : value)
     }
 
     set currentSongIndex(v) {
@@ -272,7 +272,7 @@ function lineTranspose(line) {
     let Elowercase = false;
     if (isTabLine(line)) {
         // No transpose tabLine
-      
+
         return rawLine;
     }
 
@@ -348,13 +348,13 @@ function writeLineText(line, isSong) {
     let p = document.createElement('p');
     let isLineSong = false;
 
-    
+
 
     if (line.trim() === "") {
         p = document.createElement('br');
     } else if (line.trim().match(/^---+$/)) {
         p = document.createElement('hr');
-    } else if ( line.trim().match(/^---(.*)---$/)) {
+    } else if (line.trim().match(/^---(.*)---$/)) {
         const match = line.trim().match(/^[-]+([^-]+)[-]+$/);
         const text = match[1];
         p = document.createElement('p');
@@ -367,6 +367,7 @@ function writeLineText(line, isSong) {
         } else {
             if (line.trim().match(/^>/)) {
                 p.classList.add("page-footer");
+                line = line.trim().substring(1);
             } else {
                 isLineSong = true;
             }
@@ -375,7 +376,7 @@ function writeLineText(line, isSong) {
                 for (let i = 0; i < reg.length; i++) spaces += ' ';
                 return spaces;
             });
-            
+
             let htmlLine = escapeXml(line);
             htmlLine = this.replaceNoteInBrackets(htmlLine, true);
             p.innerHTML = htmlLine;
@@ -444,7 +445,7 @@ function writeMergeChordLine(chordLine, songText) {
         return spaces;
     });
 
-    
+
     songLine = this.replaceNoteInBrackets(songLine, true);
 
     p.innerHTML = songLine;
@@ -457,9 +458,9 @@ function replaceNoteInBrackets(line, inHtml) {
     return line.replaceAll(/\[([A-G][b#]?)([1-9a-zA-Z/]{0,4})\]/g, (s, note, end) => {
         const tNote = noteTranspose(note).replaceAll(/(ø?)/gu, "");
         if (inHtml) {
-            return `<span class="inline-chord">${tNote+end}</span>`;
+            return `<span class="inline-chord">${tNote + end}</span>`;
         } else {
-            return tNote+end;
+            return tNote + end;
         }
     });
 }
@@ -686,6 +687,7 @@ function resetSong() {
     columnInput.value = songStorage.getGlobalInfoFromStorage("column") || 1;
 }
 
+
 /**
  * 0 : Write & Read
  * 1 : Read Only
@@ -693,12 +695,15 @@ function resetSong() {
  * @param {0,1,2} readMode 
  */
 function viewMode(readMode) {
+
     switch (readMode) {
         case 1:
             readonlyButton.classList.remove("active-write");
             readonlyButton.classList.add("active-read");
             document.body.classList.remove("write-only");
             document.body.classList.add("read-only");
+
+
             break;
         case 2:
             readonlyButton.classList.remove("active-read");
@@ -816,6 +821,14 @@ chordSelectInput.addEventListener("change", function () {
         updateSongSelector();
     }
     renderSong(chordArea.value);
+});
+
+const scrollContainer = document.querySelector(".song-render");
+scrollContainer.addEventListener("wheel", (evt) => {
+    if (songStorage.getGlobalInfoFromStorage("readMode") === 1 && songStorage.getGlobalInfoFromStorage("column") > 1) {
+        evt.preventDefault();
+        scrollContainer.scrollLeft += evt.deltaY;
+    }
 });
 
 
