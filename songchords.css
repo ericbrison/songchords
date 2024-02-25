@@ -197,7 +197,7 @@ main .button-delete button {
     padding-top: var(--chord-font-size);
 }
 
-.song-render .song-text > span.chord {
+.song-render .song-text>span.chord {
     color: var(--chord-color);
     position: absolute;
     transform: translate(0, calc(var(--chord-font-size) * -1));
@@ -205,11 +205,11 @@ main .button-delete button {
 }
 
 
-.song-render .song-text > span.inline-chord,
+.song-render .song-text>span.inline-chord,
 .song-render .inline-chord {
     color: var(--chord-color);
     position: unset;
-    
+
 }
 
 .song-render sup {
@@ -235,9 +235,11 @@ main .button-delete button {
 .song-render .solo-chord sup {
     font-size: inherit;
 }
+
 .song-render .solo-chord.solo-tab {
     font-weight: normal;
 }
+
 .song-render .solo-chord.solo-tab .tab-string {
     display: inline-block;
     width: 2rem;
@@ -249,11 +251,13 @@ main .button-delete button {
 .song-render .solo-text {
     color: var(--text-color);
 }
+
 .song-render .solo-text.notation-text {
     font-style: italic;
     margin-left: 1rem;
 }
-.song-render .solo-chord + .song-text {
+
+.song-render .solo-chord+.song-text {
     margin-top: 0.6rem;
 }
 
@@ -280,6 +284,29 @@ main .button-delete button {
     text-align: right;
 }
 
+.separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    font-style: italic;
+    font-size: 80%;
+}
+
+.separator::before,
+.separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--text-color);
+}
+
+.separator:not(:empty)::before {
+    margin-right: .25em;
+}
+
+.separator:not(:empty)::after {
+    margin-left: .25em;
+}
+
 /* ==============
    WRITE ONLY MODE
 ================== */
@@ -298,13 +325,14 @@ body.write-only .song-render {
 
 
 body.write-only main textarea {
-    padding: 1rem;
+    padding: 0.5rem;
 }
+
 body.write-only header label,
-body.write-only header .button-edit-print
-{
-    display:none;
+body.write-only header .button-edit-print {
+    display: none;
 }
+
 /* ==============
    READ ONLY MODE
 ================== */
@@ -328,7 +356,7 @@ body.read-only main textarea {
     display: none;
 }
 
-body.read-only .button-edit{
+body.read-only .button-edit {
     display: none;
 }
 

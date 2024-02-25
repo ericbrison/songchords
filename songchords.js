@@ -354,6 +354,12 @@ function writeLineText(line, isSong) {
         p = document.createElement('br');
     } else if (line.trim().match(/^---+$/)) {
         p = document.createElement('hr');
+    } else if ( line.trim().match(/^---(.*)---$/)) {
+        const match = line.trim().match(/^[-]+([^-]+)[-]+$/);
+        const text = match[1];
+        p = document.createElement('p');
+        p.textContent = match[1];
+        p.classList.add("separator");
     } else {
         if (line.trim().match(/^===+$/)) {
             p = document.createElement('hr');
@@ -449,7 +455,6 @@ function writeMergeChordLine(chordLine, songText) {
 
 function replaceNoteInBrackets(line, inHtml) {
     return line.replaceAll(/\[([A-G][b#]?)([1-9a-zA-Z/]{0,4})\]/g, (s, note, end) => {
-        console.log(s);
         const tNote = noteTranspose(note).replaceAll(/(ø?)/gu, "");
         if (inHtml) {
             return `<span class="inline-chord">${tNote+end}</span>`;
