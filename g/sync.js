@@ -20,7 +20,7 @@ export async function recordFile(fileName, realFileId) {
         console.log(file.status);
         addSong(fileName, file.body);
         return file.status;
-        
+
     } catch (err) {
         // TODO(developer) - Handle error
         throw err;
@@ -30,17 +30,18 @@ export async function recordFile(fileName, realFileId) {
 const songStorage = new SongStorage("songs", "global", "currentSongIndex");
 
 
-function addSong(name, body) {
+function addSong(fileName, body) {
 
-        // Create new song or update if already recorded
-        let songIndex = songStorage.getSongIndexFromName(name);
+    const name = fileName.replace(".txt", "");
+    // Create new song or update if already recorded
+    let songIndex = songStorage.getSongIndexFromName(name);
 
-        if (!songIndex) {
-            songIndex = songStorage.getNewSongIndex();
-            songStorage.recordSongInStorage("songchordname", name, songIndex);
-        }
+    if (!songIndex) {
+        songIndex = songStorage.getNewSongIndex();
+        songStorage.recordSongInStorage("songchordname", name, songIndex);
+    }
 
-        songStorage.recordSongInStorage("songchord", body, songIndex);
+    songStorage.recordSongInStorage("songchord", body, songIndex);
 }
 
 window.recordFile = recordFile;
