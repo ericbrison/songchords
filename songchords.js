@@ -272,7 +272,6 @@ function lineTranspose(line) {
     let Elowercase = false;
     if (isTabLine(line)) {
         // No transpose tabLine
-
         return rawLine;
     }
 
@@ -289,7 +288,7 @@ function lineTranspose(line) {
     });
 
     return rawLine.replaceAll(/([^ ]+%[^ ]*)/gu, function (s) {
-        return s.replace("%", "") + " ";
+        return s.replaceAll("%", "") + " ";
     });
 }
 
@@ -543,6 +542,7 @@ function isChordLine(line) {
     line = line.replaceAll(/sus[1-9]/g, "");
     line = line.replaceAll(/add[1-9]/g, "");
     line = line.replaceAll(/dim/g, "");
+    line = line.replaceAll(/aug/g, "");
     line = line.replaceAll(/x[1-9]/g, "");
 
     if (line.match(/^[A-Ge]\|-/)) {
