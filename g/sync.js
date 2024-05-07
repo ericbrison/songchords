@@ -33,7 +33,9 @@ saveButton.addEventListener("click", async function () {
     const fileId = songStorage.getSongInfoFromStorage("gId");
     const songText = songStorage.getSongInfoFromStorage("songchord");
     if (fileId) {
-        updateGoogleFile(songName, fileId, songText);
+        this.style.backgroundColor='orange';
+        await updateGoogleFile(songName, fileId, songText);
+        this.style.backgroundColor='';
     } else {
         const newFileId = await createGFile(songName, songText);
 

@@ -128,12 +128,39 @@ export default class SongStorage {
 
     replaceNoteInBrackets(line, inHtml) {
         return line.replaceAll(/\[([A-G][b#]?)([1-9a-zA-Z/]{0,4})\]/g, (s, note, end) => {
-            const tNote = noteTranspose(note).replaceAll(/(ø?)/gu, "");
+            const tNote = this.noteTranspose(note).replaceAll(/(ø?)/gu, "");
             if (inHtml) {
                 return `<span class="inline-chord">${tNote + end}</span>`;
             } else {
                 return tNote + end;
             }
         });
+    }
+
+     noteTranspose(note) {
+        const gammeB = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
+        const gammeD = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
+        const capoValue = parseInt(capoInput.value) || 0;
+        let index = gammeB.findIndex((v) => v === note);
+        if (index === -1) {
+            index = gammeD.findIndex((v) => v === note);
+        }
+    
+        let gamme = gammeB;
+        if (notationInput.value === '#') {
+            gamme = gammeD;
+        }
+        const gLength = gamme.length;
+        let tNote = gamme[(index - capoValue + gLength) % gLength];
+    
+        if (note.length === 2 && tNote.length === 1) {
+            tNote += "%";
+        }
+        if (note.length === 1 && tNote.length === 2) {
+            tNote += "ø";
+        }
+    
+        return tNote;
+    
     }
 }
