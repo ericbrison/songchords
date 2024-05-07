@@ -43,7 +43,7 @@ class SongObject {
     capo;
 }
 
-const songStorage = new SongStorage("songs", "global", "currentSongIndex");
+export const songStorage = new SongStorage("songs", "global", "currentSongIndex");
 
 
 function downloadFileText(filename, text) {
@@ -499,7 +499,7 @@ It's incredible...
 // Init parameters from localStorage
 // ---------------------------------
 
-function updateSongSelector() {
+export function updateSongSelector() {
 
     const readOnlyMode = songStorage.getGlobalInfoFromStorage("readMode") === 1;
 
@@ -605,7 +605,7 @@ printButton.addEventListener("click", function () {
 
 });
 saveButton.addEventListener("click", function () {
-    saveSong();
+   // saveSong();
 });
 
 

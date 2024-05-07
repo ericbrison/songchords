@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="songchords.css">
     <meta name="theme-color" content="#db5945">
     <link rel="apple-touch-icon" href="favicon.png" />
-    <link rel="apple-touch-icon-precomposed" href="favicon.png"/>
+    <link rel="apple-touch-icon-precomposed" href="favicon.png" />
 
     <link rel="shortcut icon" href="favicon.png">
 
@@ -57,8 +57,10 @@
             <button id="print" title="Print (Ctrl-P)">🖨</button></span>
         <span class="button button-edit button-edit-save">
             <button id="save" title="Save (Ctrl-S)">💾</button></span>
-         <span class="button  button-view-mode">
-                <button id="readonly" title="View mode">👁</button></span>
+        <span class="button button-edit button-edit-gdownload">
+            <button id="gDownload" title="Download">⇅</button></span>
+        <span class="button  button-view-mode">
+            <button id="readonly" title="View mode">👁</button></span>
     </header>
     <main>
         <section class="song-write">
@@ -82,5 +84,75 @@
 </body>
 
 <script type="module" src="songchords.js"></script>
+<script type="module" src="g/sync.js"></script>
+
+<script type="text/javascript">
+    /* exported gapiLoaded */
+    /* exported gisLoaded */
+    /* exported handleAuthClick */
+    /* exported handleSignoutClick */
+
+    // TODO(developer): Set to client ID and API key from the Developer Console
+    const CLIENT_ID = '872872836706-n6kk0khb6nkiumpimi0tvs6l4s50tevo.apps.googleusercontent.com';
+    const API_KEY = 'AIzaSyCiBW0xn66Sk_X8foBgmnqqJ3S84p91VE8';
+
+    // Discovery doc URL for APIs used by the quickstart
+    const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+
+    // Authorization scopes required by the API; multiple scopes can be
+    // included, separated by spaces.
+    const SCOPES = 'https://www.googleapis.com/auth/drive';
+
+    let tokenClient;
+    let gapiInited = false;
+    let gisInited = false;
+
+    document.getElementById('gDownload').style.visibility = 'hidden';
+
+    /**
+     * Callback after api.js is loaded.
+     */
+    function gapiLoaded() {
+        gapi.load('client', initializeGapiClient);
+    }
+
+    /**
+     * Callback after the API client is loaded. Loads the
+     * discovery doc to initialize the API.
+     */
+    async function initializeGapiClient() {
+        await gapi.client.init({
+            apiKey: API_KEY,
+            discoveryDocs: [DISCOVERY_DOC],
+        });
+        gapiInited = true;
+        maybeEnableButtons();
+    }
+
+    /**
+     * Callback after Google Identity Services are loaded.
+     */
+    function gisLoaded() {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: '', // defined later
+        });
+        gisInited = true;
+        maybeEnableButtons();
+    }
+
+    /**
+     * Enables user interaction after all libraries are loaded.
+     */
+    function maybeEnableButtons() {
+        if (gapiInited && gisInited) {
+            document.getElementById('gDownload').style.visibility = 'visible';
+        }
+    }
+
+</script>
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
 </html>
