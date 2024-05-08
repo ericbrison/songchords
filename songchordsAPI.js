@@ -62,6 +62,30 @@ export default class SongStorage {
         return null;
     }
 
+
+    getSongIndexFromGid(gID) {
+        const songs = Object.entries(this.getAllSongsStorage());
+
+        for (const [key, song] of songs) {
+            if (song.gId === gID) {
+                return key;
+            }
+        }
+        return null;
+    }
+
+
+
+    getSongInfoOfIndex(index) {
+        const songData = this.getAllSongsStorage();
+
+        if (!index || !songData[index]) {
+            return undefined;
+        }
+
+        return songData[index];
+    }
+
     getSongInfoFromStorage(key) {
         const songData = this.getAllSongsStorage();
 
@@ -137,7 +161,7 @@ export default class SongStorage {
         });
     }
 
-     noteTranspose(note) {
+    noteTranspose(note) {
         const gammeB = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
         const gammeD = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
         const capoValue = parseInt(capoInput.value) || 0;
@@ -145,22 +169,22 @@ export default class SongStorage {
         if (index === -1) {
             index = gammeD.findIndex((v) => v === note);
         }
-    
+
         let gamme = gammeB;
         if (notationInput.value === '#') {
             gamme = gammeD;
         }
         const gLength = gamme.length;
         let tNote = gamme[(index - capoValue + gLength) % gLength];
-    
+
         if (note.length === 2 && tNote.length === 1) {
             tNote += "%";
         }
         if (note.length === 1 && tNote.length === 2) {
             tNote += "ø";
         }
-    
+
         return tNote;
-    
+
     }
 }

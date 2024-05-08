@@ -156,7 +156,7 @@ function lineTranspose(line) {
     }
 
     rawLine = rawLine.replaceAll(/([A-G][b#]?)/g, function (s) {
-        return noteTranspose(s);
+        return songStorage.noteTranspose(s);
     });
     if (Elowercase) {
         rawLine = rawLine.replace(/^[A-G]/, (s) => {
@@ -172,32 +172,7 @@ function lineTranspose(line) {
     });
 }
 
-function noteTranspose(note) {
-    const gammeB = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
-    const gammeD = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
-    const capoValue = parseInt(capoInput.value) || 0;
-    let index = gammeB.findIndex((v) => v === note);
-    if (index === -1) {
-        index = gammeD.findIndex((v) => v === note);
-    }
 
-    let gamme = gammeB;
-    if (notationInput.value === '#') {
-        gamme = gammeD;
-    }
-    const gLength = gamme.length;
-    let tNote = gamme[(index - capoValue + gLength) % gLength];
-
-    if (note.length === 2 && tNote.length === 1) {
-        tNote += "%";
-    }
-    if (note.length === 1 && tNote.length === 2) {
-        tNote += "ø";
-    }
-
-    return tNote;
-
-}
 
 function writeCapo(capoValue) {
     const p = document.createElement('p');

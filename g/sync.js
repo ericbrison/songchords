@@ -32,35 +32,46 @@ saveButton.addEventListener("click", async function () {
     const songName = songStorage.getSongInfoFromStorage("songchordname");
     const fileId = songStorage.getSongInfoFromStorage("gId");
     const songText = songStorage.getSongInfoFromStorage("songchord");
-    if (fileId) {
-        this.style.backgroundColor='orange';
+    if (fileId && await existsGFile(fileId)) {
+        this.style.backgroundColor = 'orange';
         await updateGoogleFile(songName, fileId, songText);
-        this.style.backgroundColor='';
+        this.style.backgroundColor = '';
     } else {
+        this.style.backgroundColor = 'yellow';
         const newFileId = await createGFile(songName, songText);
 
         songStorage.recordSongInStorage("gId", newFileId.id);
+        this.style.backgroundColor = '';
     }
 });
 
 /**
-   * Downloads a file
-   * @param{string} realFileId file ID
-   * @return{obj} file status
+   * Record file in localstorage a file
+   * @return{obj} gFile
    * */
-export async function recordFile(fileName, realFileId) {
+export async function recordFile(gFileInfo) {
     // Get credentials and build service
     // TODO (developer) - Use appropriate auth mechanism for your app
 
 
+    const fileId = gFileInfo.id;
 
-    const fileId = realFileId;
+    let songIndex = songStorage.getSongIndexFromGid(fileId);
+    if (songIndex) {
+        let songInfo = songStorage.getSongInfoOfIndex(songIndex);
+        if (songInfo.version === gFileInfo.version) {
+            // Song file already loaded
+            return;
+        }
+
+    };
+
     try {
         const file = await gapi.client.drive.files.get({
             fileId: fileId,
             alt: 'media',
         });
-        addSong(fileName, file.body, fileId);
+        addSong(gFileInfo, file);
         return file.status;
 
     } catch (err) {
@@ -69,21 +80,42 @@ export async function recordFile(fileName, realFileId) {
     }
 }
 
+async function existsGFile(fileId) {
+    // Get credentials and build service
+    // TODO (developer) - Use appropriate auth mechanism for your app
 
 
-function addSong(fileName, body, gId) {
 
+    try {
+        const file = await gapi.client.drive.files.get({
+            fileId: fileId,
+            alt: 'media',
+        });
+        return file.status === 200;
+
+    } catch (err) {
+        return false;
+    }
+}
+
+function addSong(gFileInfo, gFile) {
+
+    const fileName = gFileInfo.name;
+    const body = gFile.body;
+    const gId = gFileInfo.id;
     const name = fileName.replace(".txt", "");
     // Create new song or update if already recorded
-    let songIndex = songStorage.getSongIndexFromName(name);
+    let songIndex = songStorage.getSongIndexFromGid(gId);
 
     if (!songIndex) {
         songIndex = songStorage.getNewSongIndex();
-        songStorage.recordSongInStorage("songchordname", name, songIndex);
     }
 
+
+    songStorage.recordSongInStorage("songchordname", name, songIndex);
     songStorage.recordSongInStorage("songchord", body, songIndex);
     songStorage.recordSongInStorage("gId", gId, songIndex);
+    songStorage.recordSongInStorage("version", gFileInfo.version, songIndex);
 }
 
 
@@ -99,7 +131,7 @@ async function handleAuthClick(success, wait) {
         }
         const fileData = await listFiles("Songs");
         for (const fileDatum of fileData) {
-            const fileInfo = await recordFile(fileDatum.name, fileDatum.id);
+            const fileInfo = await recordFile(fileDatum);
             wait.call(null, fileData.length);
         };
 
@@ -159,7 +191,7 @@ async function listFiles(directory) {
         try {
             response = await gapi.client.drive.files.list({
                 'pageSize': 50,
-                'fields': 'files(id, name, mimeType)',
+                'fields': 'files(id, name, mimeType, modifiedTime, version)',
 
                 'q': `'${songFolderId}' in parents and mimeType = 'text/plain'`
             });
@@ -208,7 +240,7 @@ function updateGFile(driveId, fileName, newData) {
         gapi.client.request({
             'path': driveUploadPath + '/' + driveId,
             'method': 'PATCH',
-            'params': { 'uploadType': 'media', 'fields': fileFields },
+            'params': { 'uploadType': 'media', 'fields': fileFields, 'mimeType': 'text/plain' },
             'body': newData
         }).then(
             async (response) => {
@@ -269,7 +301,7 @@ async function createGFile(name, data) {
     const close_delim = "\r\n--" + boundary + "--";
 
     const metadata = {
-        'mimeType': 'Content-Type: text/plain',
+        'mimeType': 'text/plain',
         'name': `${name}.txt`,
         'parents': [songFolderId]
     }
