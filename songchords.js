@@ -147,7 +147,6 @@ function expSus(line) {
 }
 
 function lineTranspose(line) {
-    const capoValue = parseInt(capoInput.value) || 0;
     let rawLine = line.replaceAll("♭", "b").replaceAll("♯", "#");
     let Elowercase = false;
     if (isTabLine(line)) {
@@ -156,7 +155,7 @@ function lineTranspose(line) {
     }
 
     rawLine = rawLine.replaceAll(/([A-G][b#]?)/g, function (s) {
-        return songStorage.noteTranspose(s);
+        return noteTranspose(s);
     });
     if (Elowercase) {
         rawLine = rawLine.replace(/^[A-G]/, (s) => {
@@ -172,7 +171,45 @@ function lineTranspose(line) {
     });
 }
 
+function replaceNoteInBrackets(line, inHtml) {
+    return line.replaceAll(/\[([A-G][b#]?)([1-9a-zA-Z/]{0,4})\]/g, (s, note, end) => {
+        const tNote = noteTranspose(note).replaceAll(/(ø?)/gu, "");
+        if (inHtml) {
+            return `<span class="inline-chord">${tNote + end}</span>`;
+        } else {
+            return tNote + end;
+        }
+    });
+}
 
+
+function noteTranspose(note) {
+
+    const capoValue = parseInt(capoInput.value) || 0;
+    const gammeB = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
+    const gammeD = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
+    let index = gammeB.findIndex((v) => v === note);
+    if (index === -1) {
+        index = gammeD.findIndex((v) => v === note);
+    }
+
+    let gamme = gammeB;
+    if (notationInput.value === '#') {
+        gamme = gammeD;
+    }
+    const gLength = gamme.length;
+    let tNote = gamme[(index - capoValue + gLength) % gLength];
+
+    if (note.length === 2 && tNote.length === 1) {
+        tNote += "%";
+    }
+    if (note.length === 1 && tNote.length === 2) {
+        tNote += "ø";
+    }
+
+    return tNote;
+
+}
 
 function writeCapo(capoValue) {
     const p = document.createElement('p');
@@ -232,7 +269,8 @@ function writeLineText(line, isSong) {
             });
 
             let htmlLine = escapeXml(line);
-            htmlLine = songStorage.replaceNoteInBrackets(htmlLine, true);
+
+            htmlLine = replaceNoteInBrackets(htmlLine, true);
             p.innerHTML = htmlLine;
 
         }
@@ -300,7 +338,7 @@ function writeMergeChordLine(chordLine, songText) {
     });
 
 
-    songLine = songStorage.replaceNoteInBrackets(songLine, true);
+    songLine = replaceNoteInBrackets(songLine, true);
 
     p.innerHTML = songLine;
 
@@ -580,7 +618,7 @@ printButton.addEventListener("click", function () {
 
 });
 saveButton.addEventListener("click", function () {
-   // saveSong();
+    // saveSong();
 });
 
 
