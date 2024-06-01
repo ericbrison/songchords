@@ -136,6 +136,10 @@ function expSus(line) {
     });
 
 
+    expLine = expLine.replaceAll(/(1?[1-9][b#])/ig, (s, p1) => {
+        s = s.replace("b", "♭").replace("#", "♯");
+        return `<sup>${s}</sup>`;
+    });
     expLine = expLine.replaceAll(/^([A-G♭♯]+)\|-/ig, (s, p1) => {
         return `<span class="tab-string">${p1}</span>|-`;
     });
@@ -422,7 +426,8 @@ function isChordLine(line) {
     line = line.replaceAll("maj", "Δ");
     line = line.replaceAll("M7", "Δ");
     line = line.replaceAll(/([A-G]).?m/g, "$1");
-    line = line.replaceAll(/([A-G])b/g, "$1");
+    line = line.replaceAll(/([A-G])[b#]/g, "$1");
+    line = line.replaceAll(/([1-9])[b#]/g, "$1");
     line = line.replaceAll(/sus[1-9]/g, "");
     line = line.replaceAll(/add[1-9]/g, "");
     line = line.replaceAll(/dim/g, "");
