@@ -193,7 +193,7 @@ async function listFiles(directory) {
                 'pageSize': 50,
                 'fields': 'files(id, name, mimeType, modifiedTime, version)',
 
-                'q': `'${songFolderId}' in parents and mimeType = 'text/plain'`
+                'q': `'${songFolderId}' in parents and name contains '.txt'`
             });
         } catch (err) {
             document.getElementById('content').innerText = err.message;
