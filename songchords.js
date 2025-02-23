@@ -28,6 +28,10 @@ const deleteButton = document.getElementById("delete");
 const chordNameInput = document.getElementById("chord-name");
 /** @type HTMLSelectElement */
 const chordSelectInput = document.getElementById("chord-select");
+/** @type HTMLButtonElement */
+const transposePlusButton = document.getElementById("transposePlus");
+/** @type HTMLButtonElement */
+const transposeMinusButton = document.getElementById("transposeMinus");
 
 if (!chordArea) {
     console.error("No textarea");
@@ -115,6 +119,26 @@ chordArea.ondrop = function (e) {
 // ----------- Chord song render management -----
 //------------------------------------------------
 
+function transposeSong(delta) {
+    const song = chordArea.value;
+
+
+    const lines = song.split('\n');
+    const tSong = [];
+
+    lines.forEach((line) => {
+        if (line.trim().length > 0) {
+            if (isChordLine(line)) {
+                line = line.replace("♪", " ");
+                line = lineTranspose(line, -delta);
+            }
+        }
+        tSong.push(line);
+    });
+
+    chordArea.value = tSong.join('\n');
+}
+
 function renderChord(line) {
 
     let chord = line.replaceAll(/([A-G)])([b#])/ig, (s, p1, p2) => {
@@ -150,24 +174,49 @@ function expSus(line) {
     return expLine;
 }
 
-function lineTranspose(line) {
+function lineTranspose(line, transpose = 0) {
     let rawLine = line.replaceAll("♭", "b").replaceAll("♯", "#");
     let Elowercase = false;
+    let spaceDelta = 0;
     if (isTabLine(line)) {
         // No transpose tabLine
         return rawLine;
     }
 
-    rawLine = rawLine.replaceAll(/([A-G][b#]?)/g, function (s) {
-        return noteTranspose(s);
+    rawLine = rawLine.replaceAll(/([A-G][b#]?)([0-9/madsuM+]*)( *)/g, function (s, s1, s2, s3) {
+        const noteT = noteTranspose(s1, transpose);
+
+        // Must respect exact white spaces number between chords
+        if (s3 !== "") {
+            if (spaceDelta < 0) {
+                s3 = s3.substring(0, s3.length + spaceDelta);
+            } else if (spaceDelta > 0) {
+                s3 += ' ';
+            }
+            if (noteT.length > s1.length) {
+                s3 = s3.substring(0, s3.length - 1);
+            } else if (noteT.length < s1.length) {
+                s2 += ' ';
+            }
+            s2 += s3;
+            spaceDelta = 0;
+        } else {
+            spaceDelta = s1.length - noteT.length;
+
+
+        }
+
+        return noteT + s2;
     });
+
+
     if (Elowercase) {
         rawLine = rawLine.replace(/^[A-G]/, (s) => {
             return s.toLowerCase();
         });
     }
-    rawLine = rawLine.replaceAll(/(ø ?)/gu, function () {
-        return "";
+    rawLine = rawLine.replaceAll(/\/ ([A-G][b#]?) /gu, function (s, s1) {
+        return "/" + s1 + " ";
     });
 
     return rawLine.replaceAll(/([^ ]+%[^ ]*)/gu, function (s) {
@@ -187,9 +236,9 @@ function replaceNoteInBrackets(line, inHtml) {
 }
 
 
-function noteTranspose(note) {
+function noteTranspose(note, transpose = 0) {
 
-    const capoValue = parseInt(capoInput.value) || 0;
+    const capoValue = transpose || parseInt(capoInput.value) || 0;
     const gammeB = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
     const gammeD = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
     let index = gammeB.findIndex((v) => v === note);
@@ -205,10 +254,10 @@ function noteTranspose(note) {
     let tNote = gamme[(index - capoValue + gLength) % gLength];
 
     if (note.length === 2 && tNote.length === 1) {
-        tNote += "%";
+        // tNote += "%";
     }
     if (note.length === 1 && tNote.length === 2) {
-        tNote += "ø";
+        // tNote += "ø";
     }
 
     return tNote;
@@ -357,6 +406,8 @@ function writeMergeChordLine(chordLine, songText) {
  */
 function renderSong(song) {
     const lines = song.split('\n');
+
+    const capoValue = parseInt(capoInput.value) || 0;
     let previousLineChord = '';
     let previousLineSong = false;
     songRender.textContent = '';
@@ -374,15 +425,15 @@ function renderSong(song) {
             }
             if (isChordLine(line)) {
                 line = line.replace("♪", " ");
-                if (!capoIsWrote && capoInput.value !== 0) {
-                    writeCapo(capoInput.value);
+                if (!capoIsWrote && capoValue) {
+                    writeCapo(capoValue);
                     capoIsWrote = true;
                 }
 
                 if (previousLineChord) {
                     writeLineChord(previousLineChord);
                 }
-                if (capoInput.value !== 0 || notationInput.value !== "") {
+                if (capoValue || notationInput.value !== "") {
                     line = lineTranspose(line);
                 }
                 previousLineChord = line;
@@ -589,20 +640,21 @@ function viewMode(readMode) {
         case 1:
             readonlyButton.classList.remove("active-write");
             readonlyButton.classList.add("active-read");
+            document.body.classList.remove("read-write");
             document.body.classList.remove("write-only");
             document.body.classList.add("read-only");
-
-
             break;
-        case 2:
+        case 2: // write only
             readonlyButton.classList.remove("active-read");
             readonlyButton.classList.add("active-write");
+            document.body.classList.remove("read-write");
             document.body.classList.remove("read-only");
             document.body.classList.add("write-only");
             break;
-        default:
+        default: // read write
             readonlyButton.classList.remove("active-read");
             readonlyButton.classList.remove("active-write");
+            document.body.classList.add("read-write");
             document.body.classList.remove("read-only");
             document.body.classList.remove("write-only");
     }
@@ -651,9 +703,15 @@ chordArea.addEventListener("input", function () {
 
 capoInput.addEventListener("change", function () {
 
-    songStorage.recordSongInStorage("capo", this.value);
+    let numberValue;
+    if (this.value) {
+        numberValue = parseInt(this.value);
+    } else {
+        numberValue = 0;
+    }
+    songStorage.recordSongInStorage("capo", numberValue);
 
-    if (this.value !== 0) {
+    if (numberValue !== 0) {
         if (notationInput.value === "") {
             notationInput.value = "b";
         }
@@ -738,7 +796,12 @@ deleteButton.addEventListener('click', () => {
     }
 });
 
-
+transposePlusButton.addEventListener('click', () => {
+    transposeSong(1);
+});
+transposeMinusButton.addEventListener('click', () => {
+    transposeSong(-1);
+});
 // ============================
 //=========== MAIN ============
 renderSong(chordArea.value);

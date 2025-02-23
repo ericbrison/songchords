@@ -335,6 +335,7 @@ body.write-only header .button-edit-print {
     display: none;
 }
 
+
 /* ==============
    READ ONLY MODE
 ================== */
@@ -387,6 +388,15 @@ body.read-only main .page-break {
     display: none;
     break-after: unset;
 }
+
+
+/* ==============
+   READ WRITE MODE
+================== */
+body.read-write header .button-edit-only {
+    display: none;
+}
+
 
 main .option-fake,
 body.read-only main .option-edit {
