@@ -374,7 +374,7 @@ function renderSong(song) {
             }
             if (isChordLine(line)) {
                 line = line.replace("♪", " ");
-                if (!capoIsWrote && capoInput.value > 0) {
+                if (!capoIsWrote && capoInput.value !== 0) {
                     writeCapo(capoInput.value);
                     capoIsWrote = true;
                 }
@@ -382,7 +382,7 @@ function renderSong(song) {
                 if (previousLineChord) {
                     writeLineChord(previousLineChord);
                 }
-                if (capoInput.value > 0 || notationInput.value !== "") {
+                if (capoInput.value !== 0 || notationInput.value !== "") {
                     line = lineTranspose(line);
                 }
                 previousLineChord = line;
@@ -565,7 +565,7 @@ export function updateSongSelector() {
 
 function resetSong() {
     chordArea.value = songStorage.getSongInfoFromStorage("songchord") || favoriteSong;
-    capoInput.value = songStorage.getSongInfoFromStorage("capo") || null;
+    capoInput.value = songStorage.getSongInfoFromStorage("capo") || 0;
     notationInput.value = songStorage.getSongInfoFromStorage("notation") || '';
     chordNameInput.value = songStorage.getSongInfoFromStorage("songchordname") || "MySong";
 
@@ -653,7 +653,7 @@ capoInput.addEventListener("change", function () {
 
     songStorage.recordSongInStorage("capo", this.value);
 
-    if (this.value > 0) {
+    if (this.value !== 0) {
         if (notationInput.value === "") {
             notationInput.value = "b";
         }
