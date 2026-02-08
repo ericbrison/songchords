@@ -1,4 +1,4 @@
-const CACHE_NAME = 'songchords-v2';
+const CACHE_NAME = 'songchords-v3';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -40,11 +40,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Don't cache external API requests
-    if (url.hostname.includes('googleapis.com') || url.hostname.includes('google.com')) {
-        return;
-    }
-    if (url.hostname.includes('allorigins.win') || url.hostname.includes('codetabs.com')) {
+    // Only cache same-origin requests (local assets)
+    if (url.origin !== self.location.origin) {
         return;
     }
 

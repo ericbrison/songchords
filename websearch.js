@@ -1,8 +1,8 @@
 import { songStorage, renderSong, resetSong, updateSongSelector, closeSongListPanel } from "./songchords.js";
 
 const CORS_PROXIES = [
-    { url: "https://api.allorigins.win/get?url=", parse: (r) => r.json().then(d => d.contents) },
-    { url: "https://api.codetabs.com/v1/proxy?quest=", parse: (r) => r.text() },
+    "https://api.allorigins.win/raw?url=",
+    "https://api.codetabs.com/v1/proxy/?quest=",
 ];
 const MAX_RETRIES = 2;
 const UG_SEARCH_URL = "https://www.ultimate-guitar.com/search.php?search_type=title&value=";
@@ -23,12 +23,12 @@ const songListWebSearch = document.getElementById("song-list-web-search");
 
 async function fetchViaProxy(url) {
     let lastError;
-    for (const proxy of CORS_PROXIES) {
+    for (const proxyBase of CORS_PROXIES) {
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             try {
-                const response = await fetch(proxy.url + encodeURIComponent(url));
+                const response = await fetch(proxyBase + encodeURIComponent(url));
                 if (!response.ok) throw new Error("HTTP " + response.status);
-                return await proxy.parse(response);
+                return await response.text();
             } catch (err) {
                 lastError = err;
             }
@@ -40,6 +40,12 @@ async function fetchViaProxy(url) {
 // ----------------------------
 // ---- UG parsing ------------
 // ----------------------------
+
+const htmlDecoder = document.createElement("textarea");
+function decodeHtmlEntities(text) {
+    htmlDecoder.innerHTML = text;
+    return htmlDecoder.value;
+}
 
 function extractUGData(html) {
     const match = html.match(/class="js-store"\s+data-content="([^"]+)"/);
@@ -62,8 +68,8 @@ async function searchUG(query) {
     return results
         .filter(r => r.type === "Chords")
         .map(r => ({
-            song_name: r.song_name,
-            artist_name: r.artist_name,
+            song_name: decodeHtmlEntities(r.song_name || ""),
+            artist_name: decodeHtmlEntities(r.artist_name || ""),
             tab_url: r.tab_url,
             rating: r.rating || 0,
             votes: r.votes || 0
@@ -81,12 +87,12 @@ async function fetchUGTab(url) {
 }
 
 function convertUGContent(content) {
-    return content
+    return decodeHtmlEntities(content
         .replace(/\[ch\]/g, "")
         .replace(/\[\/ch\]/g, "")
         .replace(/\[tab\]/g, "")
         .replace(/\[\/tab\]/g, "")
-        .replace(/\r\n/g, "\n");
+        .replace(/\r\n/g, "\n"));
 }
 
 // ----------------------------
@@ -170,18 +176,18 @@ async function searchAndDisplay() {
     if (!query) return;
 
     webSearchResults.innerHTML = "";
-    setWebSearchStatus("Recherche en cours…", false, true);
+    setWebSearchStatus("Searching…", false, true);
 
     try {
         const results = await searchUG(query);
         setWebSearchStatus("", false, false);
         if (results.length === 0) {
-            setWebSearchStatus("Aucun résultat trouvé", false, false);
+            setWebSearchStatus("No results", false, false);
         } else {
             renderWebSearchResults(results);
         }
     } catch (err) {
-        setWebSearchStatus("Erreur: " + err.message, true, false);
+        setWebSearchStatus("Error: " + err.message, true, false);
     }
 }
 

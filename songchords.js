@@ -149,6 +149,8 @@ function transposeSong(delta) {
     });
 
     chordArea.value = tSong.join('\n');
+    songStorage.recordSongInStorage("songchord", chordArea.value);
+    renderSong(chordArea.value);
 }
 
 function renderChord(line) {
@@ -1097,6 +1099,20 @@ transposePlusButton.addEventListener('click', () => {
 transposeMinusButton.addEventListener('click', () => {
     transposeSong(-1);
 });
+// Settings dropdown
+const settingsToggle = document.getElementById("settings-toggle");
+const settingsDropdown = document.getElementById("settings-dropdown");
+
+settingsToggle.addEventListener("click", () => {
+    settingsDropdown.hidden = !settingsDropdown.hidden;
+});
+
+document.addEventListener("click", (e) => {
+    if (!settingsDropdown.hidden && !e.target.closest(".toolbar-settings")) {
+        settingsDropdown.hidden = true;
+    }
+});
+
 // ============================
 //=========== MAIN ============
 renderSong(chordArea.value);

@@ -25,45 +25,43 @@
 
 <body>
     <header class="toolbar">
-        <label class="button-edit" for="textfontsize">Font size (px):
-            <input id="textfontsize" type="number" min="0" max="100">
-        </label>
+        <span class="toolbar-settings button-edit">
+            <button id="settings-toggle" class="settings-toggle" title="Settings">⚙</button>
+            <div id="settings-dropdown" class="settings-dropdown" hidden>
+                <label for="textfontsize">Font size (px):
+                    <input id="textfontsize" type="number" min="0" max="100">
+                </label>
+                <label for="chordfontsize">Chord delta size (px):
+                    <input id="chordfontsize" type="number" min="-10" max="20">
+                </label>
+                <label for="chordcolor">Chord color:
+                    <input id="chordcolor" type="color">
+                </label>
+                <label for="textcolor">Text color:
+                    <input id="textcolor" type="color">
+                </label>
+                <label for="columncount">Columns:
+                    <input id="columncount" type="number" min="1" max="5">
+                </label>
+                <label for="capo">Capo:
+                    <input id="capo" type="number" min="-11" max="11">
+                </label>
+                <label for="notation">Notation:
+                    <select id="notation">
+                        <option value="">-</option>
+                        <option value="b">♭</option>
+                        <option value="#">♯</option>
+                    </select>
+                </label>
+            </div>
+        </span>
 
-        <label class="button-edit" for="chordfontsize">Chord delta size (px):
-            <input id="chordfontsize" type="number" min="-10" max="20">
-        </label>
-
-        <label class="button-edit" for="chordcolor">Chord color:
-            <input id="chordcolor" type="color">
-        </label>
-
-        <label class="button-edit" for="textcolor">Text color:
-            <input id="textcolor" type="color">
-        </label>
-
-        <label class="button-edit" for="columncount">Count column:
-            <input id="columncount" type="number" min="1" max="5">
-        </label>
-
-
-        <span class="button button-edit button-edit-only ">
+        <span class="button button-edit button-edit-only">
             Transpose:
             <button id="transposeMinus" title="Decrease half tone">-</button>
             <button id="transposePlus" title="Add half tone">+</button>
         </span>
 
-
-        <label for="capo">Capo:
-            <input id="capo" type="number" min="-11" max="11">
-        </label>
-
-        <label for="notation">Notation:
-            <select id="notation">
-                <option value="">-</option>
-                <option value="b">♭</option>
-                <option value="#">♯</option>
-            </select>
-        </label>
         <span class="elastic"></span>
         <span class="button button-edit button-edit-print">
             <button id="print" title="Print (Ctrl-P)">🖨</button></span>
@@ -72,7 +70,7 @@
         <span class="button button-edit button-edit-gdownload">
             <button id="gDownload" title="Download">⇅</button>
             <span id="gdrive-status" class="gdrive-status" title="Google Drive: disconnected"></span></span>
-        <span class="button  button-view-mode">
+        <span class="button button-view-mode">
             <button id="readonly" title="View mode">👁</button></span>
     </header>
     <main>
@@ -127,8 +125,8 @@
             <div class="song-list-header">
                 <div class="song-list-header-row">
                     <input type="search" id="web-search-input" class="song-list-search"
-                           placeholder="Titre ou artiste…" autocomplete="off">
-                    <button id="web-search-btn" class="web-search-btn" title="Rechercher">🔍</button>
+                           placeholder="Song title or artist…" autocomplete="off">
+                    <button id="web-search-btn" class="web-search-btn" title="Search">🔍</button>
                     <button id="web-search-close" class="song-list-close" title="Close">×</button>
                 </div>
             </div>
