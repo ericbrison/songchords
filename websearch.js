@@ -1,6 +1,10 @@
 import { songStorage, renderSong, resetSong, updateSongSelector, closeSongListPanel } from "./songchords.js";
 
-const CORS_PROXY = "https://api.allorigins.win/get?url=";
+const CORS_PROXIES = [
+    { url: "https://api.allorigins.win/get?url=", parse: (r) => r.json().then(d => d.contents) },
+    { url: "https://api.codetabs.com/v1/proxy?quest=", parse: (r) => r.text() },
+];
+const MAX_RETRIES = 2;
 const UG_SEARCH_URL = "https://www.ultimate-guitar.com/search.php?search_type=title&value=";
 
 // DOM elements
@@ -18,10 +22,19 @@ const songListWebSearch = document.getElementById("song-list-web-search");
 // ----------------------------
 
 async function fetchViaProxy(url) {
-    const response = await fetch(CORS_PROXY + encodeURIComponent(url));
-    if (!response.ok) throw new Error("Network error: " + response.status);
-    const data = await response.json();
-    return data.contents;
+    let lastError;
+    for (const proxy of CORS_PROXIES) {
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+                const response = await fetch(proxy.url + encodeURIComponent(url));
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                return await proxy.parse(response);
+            } catch (err) {
+                lastError = err;
+            }
+        }
+    }
+    throw new Error("All proxies failed: " + lastError.message);
 }
 
 // ----------------------------

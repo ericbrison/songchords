@@ -521,7 +521,7 @@ function isCategoryLine(line) {
     return /^#category\s*:/i.test(line.trim());
 }
 
-function extractGroup(song) {
+export function extractGroup(song) {
     const match = song.match(/^#category\s*:\s*(.+)/im);
     return match ? match[1].trim() : "";
 }

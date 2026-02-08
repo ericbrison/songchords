@@ -1,9 +1,49 @@
 import SongStorage from "../songchordsAPI.js";
 
-import { songStorage, updateSongSelector } from "../songchords.js";
+import { songStorage, updateSongSelector, extractGroup } from "../songchords.js";
 
 
 let songFolderId;
+
+// Google Drive connection status
+const gdriveStatus = document.getElementById("gdrive-status");
+
+function isGdriveConnected() {
+    try {
+        return gapi.client.getToken() !== null;
+    } catch {
+        return false;
+    }
+}
+
+function updateGdriveStatus() {
+    const connected = isGdriveConnected();
+    gdriveStatus.classList.toggle("connected", connected);
+    gdriveStatus.classList.toggle("disconnected", !connected);
+    gdriveStatus.title = connected ? "Google Drive: connected" : "Google Drive: disconnected";
+}
+
+function ensureGdriveAuth() {
+    return new Promise((resolve, reject) => {
+        if (isGdriveConnected()) {
+            resolve();
+            return;
+        }
+        tokenClient.callback = (resp) => {
+            if (resp.error !== undefined) {
+                updateGdriveStatus();
+                reject(new Error("Auth failed: " + resp.error));
+                return;
+            }
+            updateGdriveStatus();
+            resolve();
+        };
+        tokenClient.requestAccessToken({ prompt: '' });
+    });
+}
+
+// Check status periodically
+setInterval(updateGdriveStatus, 30000);
 
 // Toast notification helpers
 const syncToast = document.getElementById("sync-toast");
@@ -38,12 +78,22 @@ function hideToast(delay = 2500) {
     }, delay);
 }
 
+function refreshAllGroups() {
+    const allSongs = songStorage.getAllSongsStorage();
+    for (const [key, song] of Object.entries(allSongs)) {
+        const group = extractGroup(song.songchord || "");
+        songStorage.recordSongInStorage("group", group, key);
+    }
+}
+
 const connectButton = document.getElementById("gDownload");
 connectButton.addEventListener("click", async function () {
     showToast("Connexion Google Drive…", "⇅", { progress: true });
     let dCount = 0;
     try {
         await handleAuthClick(() => {
+            updateGdriveStatus();
+            refreshAllGroups();
             updateSongSelector();
             showToast("Synchronisation terminée", "✓", { type: "success" });
             hideToast();
@@ -55,6 +105,7 @@ connectButton.addEventListener("click", async function () {
             }
         );
     } catch (err) {
+        updateGdriveStatus();
         showToast("Erreur sync: " + (err.message || err), "✗", { type: "error" });
         hideToast(4000);
     }
@@ -69,6 +120,7 @@ saveButton.addEventListener("click", async function () {
 
     showToast(`Sauvegarde "${songName}"…`, "💾");
     try {
+        await ensureGdriveAuth();
         if (fileId && await existsGFile(fileId)) {
             await updateGoogleFile(songName, fileId, songText);
             showToast(`"${songName}" sauvegardé`, "✓", { type: "success" });
@@ -77,8 +129,13 @@ saveButton.addEventListener("click", async function () {
             songStorage.recordSongInStorage("gId", newFileId.id);
             showToast(`"${songName}" créé sur Drive`, "✓", { type: "success" });
         }
+        updateGdriveStatus();
+        const group = extractGroup(songText);
+        songStorage.recordSongInStorage("group", group);
+        updateSongSelector();
         hideToast();
     } catch (err) {
+        updateGdriveStatus();
         showToast("Erreur: " + (err.message || err), "✗", { type: "error" });
         hideToast(4000);
     }

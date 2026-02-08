@@ -44,7 +44,7 @@ self.addEventListener('fetch', (event) => {
     if (url.hostname.includes('googleapis.com') || url.hostname.includes('google.com')) {
         return;
     }
-    if (url.hostname.includes('allorigins.win')) {
+    if (url.hostname.includes('allorigins.win') || url.hostname.includes('codetabs.com')) {
         return;
     }
 
