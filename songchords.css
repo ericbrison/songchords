@@ -141,13 +141,6 @@ main .button-delete button {
     flex: 1;
 }
 
-.chord-group {
-    font-family: monospace;
-    border: solid 1px grey;
-    border-bottom: none;
-    width: 8rem;
-}
-
 .song-write {
     display: flex;
     flex-direction: column;
@@ -765,8 +758,7 @@ body.read-only .song-list-toggle {
     padding: 0.25rem 0.5rem;
 }
 
-body.read-only main .chord-name,
-body.read-only main .chord-group {
+body.read-only main .chord-name {
     border-bottom: solid 1px grey;
     pointer-events: none;
     display: none;

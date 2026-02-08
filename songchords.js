@@ -33,10 +33,6 @@ const transposePlusButton = document.getElementById("transposePlus");
 /** @type HTMLButtonElement */
 const transposeMinusButton = document.getElementById("transposeMinus");
 
-// Group elements
-const groupInput = document.getElementById("chord-group");
-const groupSuggestions = document.getElementById("group-suggestions");
-
 // Song list panel elements
 const songListToggle = document.getElementById("song-list-toggle");
 const songListOverlay = document.getElementById("song-list-overlay");
@@ -435,6 +431,7 @@ export function renderSong(song) {
 
 
     lines.forEach((line) => {
+        if (isCategoryLine(line)) return;
         if (line.trim().length > 0) {
             if (isTextLine(line)) {
                 previousLineChord = "";
@@ -518,6 +515,15 @@ function isChordLine(line) {
         return true;
     }
     return false;
+}
+
+function isCategoryLine(line) {
+    return /^#category\s*:/i.test(line.trim());
+}
+
+function extractGroup(song) {
+    const match = song.match(/^#category\s*:\s*(.+)/im);
+    return match ? match[1].trim() : "";
 }
 
 
@@ -663,22 +669,8 @@ function updateSongListPanel() {
         songListToggle.textContent = "☰";
     }
 
-    updateGroupSuggestions();
     updateGroupFilterOptions();
     renderSongList(songListSearch.value);
-}
-
-function updateGroupSuggestions() {
-    const groups = new Set();
-    for (const [, value] of cachedSongEntries) {
-        if (value.group) groups.add(value.group);
-    }
-    groupSuggestions.innerHTML = "";
-    for (const g of [...groups].sort((a, b) => a.localeCompare(b))) {
-        const option = document.createElement("option");
-        option.value = g;
-        groupSuggestions.appendChild(option);
-    }
 }
 
 function updateGroupFilterOptions() {
@@ -698,7 +690,7 @@ function updateGroupFilterOptions() {
     allChip.type = "button";
     allChip.classList.add("song-list-group-chip");
     allChip.dataset.value = "";
-    allChip.textContent = "Tout";
+    allChip.textContent = "All";
     if (!savedGroups) allChip.classList.add("active");
     songListGroupFilter.appendChild(allChip);
 
@@ -814,7 +806,10 @@ export function resetSong() {
     capoInput.value = songStorage.getSongInfoFromStorage("capo") || 0;
     notationInput.value = songStorage.getSongInfoFromStorage("notation") || '';
     chordNameInput.value = songStorage.getSongInfoFromStorage("songchordname") || "MySong";
-    groupInput.value = songStorage.getSongInfoFromStorage("group") || "";
+
+    // Extract group from song text
+    const group = extractGroup(chordArea.value);
+    songStorage.recordSongInStorage("group", group);
 
     textFontSizeInput.value = songStorage.getGlobalInfoFromStorage("textfontsize") || 12;
     chordFontSizeInput.value = songStorage.getGlobalInfoFromStorage("chordfontsize") || 0;
@@ -890,15 +885,13 @@ chordNameInput.addEventListener("change", function () {
     songStorage.recordSongInStorage("songchordname", v);
 
 });
-groupInput.addEventListener("change", function () {
-    songStorage.recordSongInStorage("group", this.value.trim());
-    updateSongSelector();
-});
 chordArea.addEventListener("input", function () {
     const v = this.value.replaceAll("\t", "        ");
     songStorage.recordSongInStorage("songchord", v);
+    const group = extractGroup(v);
+    songStorage.recordSongInStorage("group", group);
     renderSong(v);
-
+    updateSongSelector();
 });
 
 capoInput.addEventListener("change", function () {
