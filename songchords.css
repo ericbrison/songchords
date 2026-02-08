@@ -141,6 +141,13 @@ main .button-delete button {
     flex: 1;
 }
 
+.chord-group {
+    font-family: monospace;
+    border: solid 1px grey;
+    border-bottom: none;
+    width: 8rem;
+}
+
 .song-write {
     display: flex;
     flex-direction: column;
@@ -313,6 +320,270 @@ main .button-delete button {
 }
 
 /* ==============
+   SONG LIST OVERLAY
+================== */
+
+.song-list-toggle {
+    font-size: 1.2rem;
+    min-width: 2rem;
+    height: 1.5rem;
+    cursor: pointer;
+    background: transparent;
+    border: solid 1px grey;
+    border-radius: 4px;
+}
+
+.song-list-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: song-list-fade-in 0.15s ease-out;
+}
+
+.song-list-overlay[hidden] {
+    display: none;
+}
+
+@keyframes song-list-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes song-list-slide-in {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.song-list-panel {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 420px;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    animation: song-list-slide-in 0.2s ease-out;
+}
+
+.song-list-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-bottom: solid 1px #e0e0e0;
+}
+
+.song-list-header-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.song-list-group-filter {
+    width: 100%;
+    font-size: 0.85rem;
+    border: solid 1px #ccc;
+    border-radius: 4px;
+    padding: 0.2rem;
+    outline: none;
+    overflow-y: auto;
+}
+
+.song-list-group-filter:focus {
+    border-color: #3b3bc8;
+}
+
+.song-list-group-filter[data-empty] {
+    display: none;
+}
+
+.song-list-search {
+    flex: 1;
+    height: 2.2rem;
+    font-size: 1rem;
+    padding: 0 0.5rem;
+    border: solid 1px #ccc;
+    border-radius: 4px;
+    outline: none;
+}
+
+.song-list-search:focus {
+    border-color: #3b3bc8;
+}
+
+.song-list-close {
+    font-size: 1.5rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    color: #666;
+}
+
+.song-list-close:hover {
+    background: #eee;
+}
+
+.song-list-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+}
+
+.song-list-items li {
+    padding: 0.7rem 1rem;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-bottom: solid 1px #f0f0f0;
+    box-sizing: border-box;
+}
+
+.song-list-items li:hover {
+    background: #f5f5f5;
+}
+
+.song-list-items li.song-list-current {
+    background: #3b3bc8;
+    color: white;
+}
+
+.song-list-items li.song-list-current:hover {
+    background: #2a2aab;
+}
+
+.song-list-match {
+    background: #fff3b0;
+    border-radius: 2px;
+}
+
+.song-list-current .song-list-match {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.song-list-items li.song-group-header {
+    background: #e8e8e8;
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: #555;
+    cursor: default;
+    padding: 0.4rem 0.75rem;
+    min-height: unset;
+    gap: 0.4rem;
+}
+
+.song-list-items li.song-group-header:hover {
+    background: #e8e8e8;
+}
+
+.song-list-items li.song-grouped {
+    padding-left: 1.5rem;
+}
+
+.song-list-items:empty::after {
+    content: "Aucune chanson trouvée";
+    display: block;
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #999;
+    font-style: italic;
+}
+
+.song-list-footer {
+    padding: 0.5rem 0.75rem;
+    border-top: solid 1px #e0e0e0;
+}
+
+.song-list-new {
+    width: 100%;
+    height: 2.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: dashed 2px #ccc;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #555;
+}
+
+.song-list-new:hover {
+    border-color: #3b3bc8;
+    color: #3b3bc8;
+}
+
+/* ==============
+   WEB SEARCH
+================== */
+
+.web-search-btn {
+    font-size: 1.2rem;
+    width: 2.5rem;
+    height: 2.2rem;
+    border: solid 1px #ccc;
+    background: #f5f5f5;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.web-search-btn:hover {
+    border-color: #3b3bc8;
+    background: #e8e8f8;
+}
+
+.web-search-status {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+    border-bottom: solid 1px #e0e0e0;
+}
+
+.web-search-status[hidden] {
+    display: none;
+}
+
+.web-search-status.web-search-error {
+    color: #c0392b;
+    background: #fdf0ef;
+}
+
+.web-search-result-item {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.2rem;
+}
+
+.web-search-result-title {
+    font-weight: bold;
+}
+
+.web-search-result-info {
+    font-size: 0.8rem;
+    color: #888;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.web-search-result-info .web-search-rating {
+    color: #e6a817;
+}
+
+.web-search-panel .song-list-items:empty::after {
+    content: "";
+}
+
+/* ==============
    WRITE ONLY MODE
 ================== */
 
@@ -368,7 +639,20 @@ body.read-only .button-delete {
     display: none;
 }
 
-body.read-only main .chord-name {
+body.read-only .song-list-footer {
+    display: none;
+}
+
+body.read-only .song-list-toggle {
+    flex: 1;
+    text-align: left;
+    font-size: 1rem;
+    height: auto;
+    padding: 0.25rem 0.5rem;
+}
+
+body.read-only main .chord-name,
+body.read-only main .chord-group {
     border-bottom: solid 1px grey;
     pointer-events: none;
     display: none;
@@ -438,6 +722,13 @@ footer.print-footer {
     header.toolbar,
     .song-write {
         display: none;
+    }
+
+    .song-list-overlay,
+    .web-search-overlay,
+    #web-search-overlay,
+    .song-list-toggle {
+        display: none !important;
     }
 
 

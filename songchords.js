@@ -33,6 +33,22 @@ const transposePlusButton = document.getElementById("transposePlus");
 /** @type HTMLButtonElement */
 const transposeMinusButton = document.getElementById("transposeMinus");
 
+// Group elements
+const groupInput = document.getElementById("chord-group");
+const groupSuggestions = document.getElementById("group-suggestions");
+
+// Song list panel elements
+const songListToggle = document.getElementById("song-list-toggle");
+const songListOverlay = document.getElementById("song-list-overlay");
+const songListSearch = document.getElementById("song-list-search");
+const songListItems = document.getElementById("song-list-items");
+const songListClose = document.getElementById("song-list-close");
+const songListNew = document.getElementById("song-list-new");
+const songListFooter = document.getElementById("song-list-footer");
+const songListGroupFilter = document.getElementById("song-list-group-filter");
+
+let cachedSongEntries = [];
+
 if (!chordArea) {
     console.error("No textarea");
 }
@@ -404,7 +420,7 @@ function writeMergeChordLine(chordLine, songText) {
 /**
  * Main function to render raw text to printed text
  */
-function renderSong(song) {
+export function renderSong(song) {
     const lines = song.split('\n');
 
     const capoValue = parseInt(capoInput.value) || 0;
@@ -571,6 +587,7 @@ It's incredible...
 export function updateSongSelector() {
 
     const readOnlyMode = songStorage.getGlobalInfoFromStorage("readMode") === 1;
+    const selectedGroups = getSelectedGroups();
 
     // Sort by song title
     const recorderSongs = Object.entries(songStorage.getAllSongsStorage()).sort(
@@ -585,6 +602,14 @@ export function updateSongSelector() {
     emptyOption.classList.add("option-fake");
     chordSelectInput.add(emptyOption)
     for (const [key, value] of recorderSongs) {
+        // Apply category filter (but always keep the current song)
+        if (selectedGroups !== null && key !== songStorage.currentSongIndex) {
+            const songGroup = value.group || "";
+            if (!songGroup || !selectedGroups.includes(songGroup)) {
+                continue;
+            }
+        }
+
         if (key !== songStorage.currentSongIndex) {
             const newOption = new Option(value.songchordname, key);
             chordSelectInput.add(newOption)
@@ -612,13 +637,196 @@ export function updateSongSelector() {
     addOption.classList.add("option-edit");
     chordSelectInput.add(addOption)
 
+    updateSongListPanel();
 }
 
-function resetSong() {
+function updateSongListPanel() {
+    const readOnlyMode = songStorage.getGlobalInfoFromStorage("readMode") === 1;
+
+    cachedSongEntries = Object.entries(songStorage.getAllSongsStorage()).sort(
+        ([, a], [, b]) => {
+            const ga = a.group || "";
+            const gb = b.group || "";
+            if (ga && !gb) return -1;
+            if (!ga && gb) return 1;
+            const cmp = ga.localeCompare(gb);
+            if (cmp !== 0) return cmp;
+            return (a.songchordname || "").localeCompare(b.songchordname || "");
+        }
+    );
+
+    // Update toggle text
+    if (readOnlyMode) {
+        const currentName = songStorage.getSongInfoFromStorage("songchordname") || "☰";
+        songListToggle.textContent = currentName;
+    } else {
+        songListToggle.textContent = "☰";
+    }
+
+    updateGroupSuggestions();
+    updateGroupFilterOptions();
+    renderSongList(songListSearch.value);
+}
+
+function updateGroupSuggestions() {
+    const groups = new Set();
+    for (const [, value] of cachedSongEntries) {
+        if (value.group) groups.add(value.group);
+    }
+    groupSuggestions.innerHTML = "";
+    for (const g of [...groups].sort((a, b) => a.localeCompare(b))) {
+        const option = document.createElement("option");
+        option.value = g;
+        groupSuggestions.appendChild(option);
+    }
+}
+
+function updateGroupFilterOptions() {
+    const groups = new Set();
+    for (const [, value] of cachedSongEntries) {
+        if (value.group) groups.add(value.group);
+    }
+
+    const sortedGroups = [...groups].sort((a, b) => a.localeCompare(b));
+
+    // Hide filter if no groups exist
+    if (sortedGroups.length === 0) {
+        songListGroupFilter.setAttribute("data-empty", "");
+        return;
+    }
+    songListGroupFilter.removeAttribute("data-empty");
+
+    // Restore saved selection
+    const savedGroups = songStorage.getGlobalInfoFromStorage("selectedGroups");
+
+    songListGroupFilter.innerHTML = "";
+
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = "Toutes catégories";
+    if (!savedGroups) {
+        allOption.selected = true;
+    }
+    songListGroupFilter.appendChild(allOption);
+
+    for (const g of sortedGroups) {
+        const option = document.createElement("option");
+        option.value = g;
+        option.textContent = g;
+        if (savedGroups && savedGroups.includes(g)) {
+            option.selected = true;
+        }
+        songListGroupFilter.appendChild(option);
+    }
+
+    // Set size to show all options (max 6)
+    songListGroupFilter.size = Math.min(sortedGroups.length + 1, 6);
+}
+
+function getSelectedGroups() {
+    const selected = Array.from(songListGroupFilter.selectedOptions).map(o => o.value);
+    // If "Toutes catégories" (value="") is selected, or nothing selected, return null
+    if (selected.includes("") || selected.length === 0) {
+        return null;
+    }
+    return selected;
+}
+
+function renderSongList(filter) {
+    songListItems.innerHTML = "";
+    const lowerFilter = (filter || "").toLowerCase();
+    const currentId = songStorage.currentSongIndex;
+    const selectedGroups = getSelectedGroups();
+
+    // Find groups that match the filter (to show all their songs)
+    const matchingGroups = new Set();
+    if (lowerFilter) {
+        for (const [, value] of cachedSongEntries) {
+            const group = value.group || "";
+            if (group && group.toLowerCase().includes(lowerFilter)) {
+                matchingGroups.add(group);
+            }
+        }
+    }
+
+    let lastGroup = null;
+
+    for (const [key, value] of cachedSongEntries) {
+        const name = value.songchordname || "";
+        const group = value.group || "";
+
+        // Apply category filter
+        if (selectedGroups !== null) {
+            if (!group || !selectedGroups.includes(group)) {
+                continue;
+            }
+        }
+
+        const nameMatches = !lowerFilter || name.toLowerCase().includes(lowerFilter);
+        const groupMatches = matchingGroups.has(group);
+
+        if (lowerFilter && !nameMatches && !groupMatches) {
+            continue;
+        }
+
+        // Insert group header if group changed
+        if (group && group !== lastGroup) {
+            const header = document.createElement("li");
+            header.classList.add("song-group-header");
+            header.textContent = "\uD83D\uDCC1 " + group;
+            songListItems.appendChild(header);
+        }
+        lastGroup = group;
+
+        const li = document.createElement("li");
+        li.dataset.songId = key;
+
+        if (group) {
+            li.classList.add("song-grouped");
+        }
+
+        if (key === currentId) {
+            li.classList.add("song-list-current");
+        }
+
+        if (lowerFilter) {
+            li.innerHTML = highlightMatch(name, lowerFilter);
+        } else {
+            li.textContent = name;
+        }
+
+        songListItems.appendChild(li);
+    }
+}
+
+function highlightMatch(text, filter) {
+    const lowerText = text.toLowerCase();
+    const idx = lowerText.indexOf(filter);
+    if (idx === -1) return escapeXml(text);
+
+    const before = text.substring(0, idx);
+    const match = text.substring(idx, idx + filter.length);
+    const after = text.substring(idx + filter.length);
+    return escapeXml(before) + '<span class="song-list-match">' + escapeXml(match) + '</span>' + escapeXml(after);
+}
+
+function openSongListPanel() {
+    songListSearch.value = "";
+    renderSongList("");
+    songListOverlay.hidden = false;
+    songListSearch.focus();
+}
+
+export function closeSongListPanel() {
+    songListOverlay.hidden = true;
+}
+
+export function resetSong() {
     chordArea.value = songStorage.getSongInfoFromStorage("songchord") || favoriteSong;
     capoInput.value = songStorage.getSongInfoFromStorage("capo") || 0;
     notationInput.value = songStorage.getSongInfoFromStorage("notation") || '';
     chordNameInput.value = songStorage.getSongInfoFromStorage("songchordname") || "MySong";
+    groupInput.value = songStorage.getSongInfoFromStorage("group") || "";
 
     textFontSizeInput.value = songStorage.getGlobalInfoFromStorage("textfontsize") || 12;
     chordFontSizeInput.value = songStorage.getGlobalInfoFromStorage("chordfontsize") || 0;
@@ -693,6 +901,10 @@ chordNameInput.addEventListener("change", function () {
     const v = this.value.trim();
     songStorage.recordSongInStorage("songchordname", v);
 
+});
+groupInput.addEventListener("change", function () {
+    songStorage.recordSongInStorage("group", this.value.trim());
+    updateSongSelector();
 });
 chordArea.addEventListener("input", function () {
     const v = this.value.replaceAll("\t", "        ");
@@ -770,11 +982,93 @@ chordSelectInput.addEventListener("change", function () {
     renderSong(chordArea.value);
 });
 
+// Song list panel events
+songListToggle.addEventListener("click", openSongListPanel);
+
+songListClose.addEventListener("click", closeSongListPanel);
+
+songListOverlay.addEventListener("click", function (e) {
+    if (e.target === songListOverlay) {
+        closeSongListPanel();
+    }
+});
+
+songListSearch.addEventListener("input", function () {
+    renderSongList(this.value);
+});
+
+songListGroupFilter.addEventListener("change", function () {
+    const selected = getSelectedGroups();
+    songStorage.setGlobalInfoIntoStorage("selectedGroups", selected);
+    updateSongSelector();
+});
+
+songListItems.addEventListener("click", function (e) {
+    const li = e.target.closest("li");
+    if (!li || !li.dataset.songId) return;
+
+    songStorage.currentSongIndex = li.dataset.songId;
+    resetSong();
+    updateSongSelector();
+    renderSong(chordArea.value);
+    closeSongListPanel();
+});
+
+songListNew.addEventListener("click", function () {
+    songStorage.currentSongIndex = null;
+    chordNameInput.value = "";
+    chordArea.value = "";
+
+    songStorage.recordSongInStorage("songchordname", chordNameInput.value);
+    songStorage.recordSongInStorage("songchord", chordArea.value);
+    chordNameInput.focus();
+    updateSongSelector();
+    renderSong(chordArea.value);
+    closeSongListPanel();
+});
+
 const scrollContainer = document.querySelector(".song-render");
 scrollContainer.addEventListener("wheel", (evt) => {
     if (songStorage.getGlobalInfoFromStorage("readMode") === 1 && songStorage.getGlobalInfoFromStorage("column") > 1) {
         evt.preventDefault();
         scrollContainer.scrollLeft += evt.deltaY;
+    }
+});
+
+// Pinch-to-zoom font size on touch devices
+let pinchStartDist = 0;
+let pinchStartFontSize = 0;
+
+function getTouchDistance(t1, t2) {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.hypot(dx, dy);
+}
+
+scrollContainer.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
+        e.preventDefault();
+        pinchStartDist = getTouchDistance(e.touches[0], e.touches[1]);
+        pinchStartFontSize = parseInt(textFontSizeInput.value) || 12;
+    }
+}, { passive: false });
+
+scrollContainer.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 2) {
+        e.preventDefault();
+        const currentDist = getTouchDistance(e.touches[0], e.touches[1]);
+        const ratio = currentDist / pinchStartDist;
+        const newSize = Math.round(Math.min(60, Math.max(6, pinchStartFontSize * ratio)));
+        textFontSizeInput.value = newSize;
+        updateStyle();
+    }
+}, { passive: false });
+
+scrollContainer.addEventListener("touchend", (e) => {
+    if (e.touches.length < 2 && pinchStartDist > 0) {
+        pinchStartDist = 0;
+        songStorage.setGlobalInfoIntoStorage("textfontsize", textFontSizeInput.value);
+        renderSong(chordArea.value);
     }
 });
 
@@ -784,6 +1078,9 @@ document.addEventListener('keydown', e => {
         // Prevent the Save dialog to open
         e.preventDefault();
         saveSong();
+    }
+    if (e.key === 'Escape' && !songListOverlay.hidden) {
+        closeSongListPanel();
     }
 });
 

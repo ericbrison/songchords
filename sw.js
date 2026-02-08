@@ -1,4 +1,4 @@
-const CACHE_NAME = 'songchords-v1';
+const CACHE_NAME = 'songchords-v2';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -6,6 +6,7 @@ const ASSETS_TO_CACHE = [
     './songchords.js',
     './songchordsAPI.js',
     './songchords.css',
+    './websearch.js',
     './g/sync.js',
     './site.webmanifest',
     './favicon.png',
@@ -39,8 +40,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Don't cache Google API requests
+    // Don't cache external API requests
     if (url.hostname.includes('googleapis.com') || url.hostname.includes('google.com')) {
+        return;
+    }
+    if (url.hostname.includes('allorigins.win')) {
         return;
     }
 

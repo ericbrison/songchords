@@ -78,10 +78,13 @@
         <section class="song-write">
             <header class="chord-header">
                 <input class="chord-name" id="chord-name" value="mySong">
-                <select title="Song switcher" id="chord-select">
+                <input class="chord-group" id="chord-group" placeholder="Groupe" list="group-suggestions">
+                <datalist id="group-suggestions"></datalist>
+                <select title="Song switcher" id="chord-select" style="display:none">
                     <option value="">-</option>
                     <option value="+">New song</option>
                 </select>
+                <button id="song-list-toggle" class="song-list-toggle" title="Song list">☰</button>
                 <span class="button button-fixed button-delete">
                     <button title="Delete this song" id="delete">🗑</button>
                 </span>
@@ -93,6 +96,40 @@
         </section>
     </main>
 
+    <div id="song-list-overlay" class="song-list-overlay" hidden>
+        <div class="song-list-panel">
+            <div class="song-list-header">
+                <select id="song-list-group-filter" class="song-list-group-filter" multiple title="Filtrer par catégorie">
+                    <option value="" selected>Toutes catégories</option>
+                </select>
+                <div class="song-list-header-row">
+                    <input type="search" id="song-list-search" class="song-list-search" placeholder="Filter songs…" autocomplete="off">
+                    <button id="song-list-close" class="song-list-close" title="Close">×</button>
+                </div>
+            </div>
+            <ul id="song-list-items" class="song-list-items"></ul>
+            <div class="song-list-footer" id="song-list-footer">
+                <button id="song-list-new" class="song-list-new">+ New song</button>
+                <button id="song-list-web-search" class="song-list-new">🔍 Search on web</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="web-search-overlay" class="song-list-overlay" hidden>
+        <div class="song-list-panel web-search-panel">
+            <div class="song-list-header">
+                <div class="song-list-header-row">
+                    <input type="search" id="web-search-input" class="song-list-search"
+                           placeholder="Titre ou artiste…" autocomplete="off">
+                    <button id="web-search-btn" class="web-search-btn" title="Rechercher">🔍</button>
+                    <button id="web-search-close" class="song-list-close" title="Close">×</button>
+                </div>
+            </div>
+            <div id="web-search-status" class="web-search-status" hidden></div>
+            <ul id="web-search-results" class="song-list-items"></ul>
+        </div>
+    </div>
+
 </body>
 
 <script>
@@ -101,6 +138,7 @@
     }
 </script>
 <script type="module" src="songchords.js"></script>
+<script type="module" src="websearch.js"></script>
 <script type="module" src="g/sync.js"></script>
 
 <script type="text/javascript">
