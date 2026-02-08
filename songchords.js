@@ -689,47 +689,35 @@ function updateGroupFilterOptions() {
 
     const sortedGroups = [...groups].sort((a, b) => a.localeCompare(b));
 
-    // Hide filter if no groups exist
-    if (sortedGroups.length === 0) {
-        songListGroupFilter.setAttribute("data-empty", "");
-        return;
-    }
-    songListGroupFilter.removeAttribute("data-empty");
+    songListGroupFilter.innerHTML = "";
+    if (sortedGroups.length === 0) return;
 
-    // Restore saved selection
     const savedGroups = songStorage.getGlobalInfoFromStorage("selectedGroups");
 
-    songListGroupFilter.innerHTML = "";
-
-    const allOption = document.createElement("option");
-    allOption.value = "";
-    allOption.textContent = "Toutes catégories";
-    if (!savedGroups) {
-        allOption.selected = true;
-    }
-    songListGroupFilter.appendChild(allOption);
+    const allChip = document.createElement("button");
+    allChip.type = "button";
+    allChip.classList.add("song-list-group-chip");
+    allChip.dataset.value = "";
+    allChip.textContent = "Tout";
+    if (!savedGroups) allChip.classList.add("active");
+    songListGroupFilter.appendChild(allChip);
 
     for (const g of sortedGroups) {
-        const option = document.createElement("option");
-        option.value = g;
-        option.textContent = g;
-        if (savedGroups && savedGroups.includes(g)) {
-            option.selected = true;
-        }
-        songListGroupFilter.appendChild(option);
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.classList.add("song-list-group-chip");
+        chip.dataset.value = g;
+        chip.textContent = g;
+        if (savedGroups && savedGroups.includes(g)) chip.classList.add("active");
+        songListGroupFilter.appendChild(chip);
     }
-
-    // Set size to show all options (max 6)
-    songListGroupFilter.size = Math.min(sortedGroups.length + 1, 6);
 }
 
 function getSelectedGroups() {
-    const selected = Array.from(songListGroupFilter.selectedOptions).map(o => o.value);
-    // If "Toutes catégories" (value="") is selected, or nothing selected, return null
-    if (selected.includes("") || selected.length === 0) {
-        return null;
-    }
-    return selected;
+    const active = songListGroupFilter.querySelectorAll(".song-list-group-chip.active");
+    const values = Array.from(active).map(c => c.dataset.value);
+    if (values.includes("") || values.length === 0) return null;
+    return values;
 }
 
 function renderSongList(filter) {
@@ -997,9 +985,26 @@ songListSearch.addEventListener("input", function () {
     renderSongList(this.value);
 });
 
-songListGroupFilter.addEventListener("change", function () {
-    const selected = getSelectedGroups();
-    songStorage.setGlobalInfoIntoStorage("selectedGroups", selected);
+songListGroupFilter.addEventListener("click", function (e) {
+    const chip = e.target.closest(".song-list-group-chip");
+    if (!chip) return;
+
+    if (chip.dataset.value === "") {
+        // "Tout" chip: deselect others, activate this one
+        songListGroupFilter.querySelectorAll(".song-list-group-chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+    } else {
+        // Category chip: toggle it, deselect "Tout"
+        const allChip = songListGroupFilter.querySelector('[data-value=""]');
+        if (allChip) allChip.classList.remove("active");
+        chip.classList.toggle("active");
+        // If nothing selected, re-activate "Tout"
+        if (!songListGroupFilter.querySelector(".song-list-group-chip.active")) {
+            if (allChip) allChip.classList.add("active");
+        }
+    }
+
+    songStorage.setGlobalInfoIntoStorage("selectedGroups", getSelectedGroups());
     updateSongSelector();
 });
 

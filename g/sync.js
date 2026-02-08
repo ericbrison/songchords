@@ -5,43 +5,82 @@ import { songStorage, updateSongSelector } from "../songchords.js";
 
 let songFolderId;
 
+// Toast notification helpers
+const syncToast = document.getElementById("sync-toast");
+const syncToastIcon = document.getElementById("sync-toast-icon");
+const syncToastMessage = document.getElementById("sync-toast-message");
+const syncToastProgress = document.getElementById("sync-toast-progress");
+const syncToastBar = document.getElementById("sync-toast-bar");
+let toastTimer = null;
+
+function showToast(message, icon, { type = "", progress = false } = {}) {
+    clearTimeout(toastTimer);
+    syncToast.className = "sync-toast" + (type ? " sync-toast-" + type : "");
+    syncToastIcon.textContent = icon;
+    syncToastIcon.classList.toggle("spin", type === "");
+    syncToastMessage.textContent = message;
+    syncToastProgress.hidden = !progress;
+    syncToastBar.style.width = "0%";
+    syncToast.hidden = false;
+}
+
+function updateToastProgress(current, total) {
+    syncToastBar.style.width = Math.round((current / total) * 100) + "%";
+}
+
+function hideToast(delay = 2500) {
+    toastTimer = setTimeout(() => {
+        syncToast.style.animation = "sync-toast-out 0.3s ease-in forwards";
+        setTimeout(() => {
+            syncToast.hidden = true;
+            syncToast.style.animation = "";
+        }, 300);
+    }, delay);
+}
+
 const connectButton = document.getElementById("gDownload");
 connectButton.addEventListener("click", async function () {
-    this.style.backgroundColor = 'orange';
+    showToast("Connexion Google Drive…", "⇅", { progress: true });
     let dCount = 0;
-    await handleAuthClick(() => {
-
-        updateSongSelector();
-        this.style.backgroundColor = '#8dde8d';
-        this.textContent = '⇅';
-    },
-        (cFiles) => {
-            dCount++;
-
-            this.style.backgroundColor = (dCount % 2 === 0) ? 'yellow' : 'orange';
-            this.textContent = cFiles - dCount;
-        }
-    );
-
+    try {
+        await handleAuthClick(() => {
+            updateSongSelector();
+            showToast("Synchronisation terminée", "✓", { type: "success" });
+            hideToast();
+        },
+            (cFiles) => {
+                dCount++;
+                showToast(`Téléchargement ${dCount} / ${cFiles}…`, "⇅", { progress: true });
+                updateToastProgress(dCount, cFiles);
+            }
+        );
+    } catch (err) {
+        showToast("Erreur sync: " + (err.message || err), "✗", { type: "error" });
+        hideToast(4000);
+    }
 });
 
 
 const saveButton = document.getElementById("save");
 saveButton.addEventListener("click", async function () {
-
-    const songName = songStorage.getSongInfoFromStorage("songchordname");
+    const songName = songStorage.getSongInfoFromStorage("songchordname") || "unnamed";
     const fileId = songStorage.getSongInfoFromStorage("gId");
     const songText = songStorage.getSongInfoFromStorage("songchord");
-    if (fileId && await existsGFile(fileId)) {
-        this.style.backgroundColor = 'orange';
-        await updateGoogleFile(songName, fileId, songText);
-        this.style.backgroundColor = '';
-    } else {
-        this.style.backgroundColor = 'yellow';
-        const newFileId = await createGFile(songName, songText);
 
-        songStorage.recordSongInStorage("gId", newFileId.id);
-        this.style.backgroundColor = '';
+    showToast(`Sauvegarde "${songName}"…`, "💾");
+    try {
+        if (fileId && await existsGFile(fileId)) {
+            await updateGoogleFile(songName, fileId, songText);
+            showToast(`"${songName}" sauvegardé`, "✓", { type: "success" });
+        } else {
+            const newFileId = await createGFile(songName, songText);
+            songStorage.recordSongInStorage("gId", newFileId.id);
+            showToast(`"${songName}" créé sur Drive`, "✓", { type: "success" });
+        }
+        hideToast();
+    } catch (err) {
+        showToast("Erreur: " + (err.message || err), "✗", { type: "error" });
+        hideToast(4000);
     }
 });
 

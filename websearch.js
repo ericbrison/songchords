@@ -98,10 +98,11 @@ function importUGSong(name, artist, content) {
 // ---- UI --------------------
 // ----------------------------
 
-function setWebSearchStatus(message, isError) {
+function setWebSearchStatus(message, isError, isLoading) {
     webSearchStatus.hidden = !message;
     webSearchStatus.textContent = message || "";
     webSearchStatus.classList.toggle("web-search-error", !!isError);
+    webSearchStatus.classList.toggle("web-search-loading", !!isLoading);
 }
 
 function renderWebSearchResults(results) {
@@ -135,13 +136,15 @@ function renderWebSearchResults(results) {
         li.appendChild(info);
 
         li.addEventListener("click", async () => {
-            setWebSearchStatus("Importing…", false);
+            li.classList.add("web-search-importing");
+            setWebSearchStatus("Importing…", false, true);
             try {
                 const content = await fetchUGTab(r.tab_url);
                 importUGSong(r.song_name, r.artist_name, content);
                 closeWebSearch();
             } catch (err) {
-                setWebSearchStatus("Import error: " + err.message, true);
+                li.classList.remove("web-search-importing");
+                setWebSearchStatus("Import error: " + err.message, true, false);
             }
         });
 
@@ -154,18 +157,18 @@ async function searchAndDisplay() {
     if (!query) return;
 
     webSearchResults.innerHTML = "";
-    setWebSearchStatus("Recherche en cours…", false);
+    setWebSearchStatus("Recherche en cours…", false, true);
 
     try {
         const results = await searchUG(query);
-        setWebSearchStatus("", false);
+        setWebSearchStatus("", false, false);
         if (results.length === 0) {
-            setWebSearchStatus("Aucun résultat trouvé", false);
+            setWebSearchStatus("Aucun résultat trouvé", false, false);
         } else {
             renderWebSearchResults(results);
         }
     } catch (err) {
-        setWebSearchStatus("Erreur: " + err.message, true);
+        setWebSearchStatus("Erreur: " + err.message, true, false);
     }
 }
 

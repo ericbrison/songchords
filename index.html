@@ -96,12 +96,20 @@
         </section>
     </main>
 
+    <div id="sync-toast" class="sync-toast" hidden>
+        <div class="sync-toast-content">
+            <span id="sync-toast-icon" class="sync-toast-icon"></span>
+            <span id="sync-toast-message" class="sync-toast-message"></span>
+        </div>
+        <div id="sync-toast-progress" class="sync-toast-progress" hidden>
+            <div id="sync-toast-bar" class="sync-toast-bar"></div>
+        </div>
+    </div>
+
     <div id="song-list-overlay" class="song-list-overlay" hidden>
         <div class="song-list-panel">
             <div class="song-list-header">
-                <select id="song-list-group-filter" class="song-list-group-filter" multiple title="Filtrer par catégorie">
-                    <option value="" selected>Toutes catégories</option>
-                </select>
+                <div id="song-list-group-filter" class="song-list-group-filter"></div>
                 <div class="song-list-header-row">
                     <input type="search" id="song-list-search" class="song-list-search" placeholder="Filter songs…" autocomplete="off">
                     <button id="song-list-close" class="song-list-close" title="Close">×</button>
