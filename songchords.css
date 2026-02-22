@@ -709,6 +709,25 @@ main .button-delete button {
     content: "";
 }
 
+.app-footer {
+    text-align: center;
+    padding: 0.4rem;
+    font-size: 0.75rem;
+    color: #999;
+    background: #f5f5f5;
+    border-top: solid 1px #e0e0e0;
+}
+
+.app-footer a {
+    color: #888;
+    text-decoration: none;
+}
+
+.app-footer a:hover {
+    color: #3b3bc8;
+    text-decoration: underline;
+}
+
 .ug-credentials-form {
     padding: 1.5rem 1rem;
     display: flex;
@@ -1007,7 +1026,8 @@ footer.print-footer {
     .web-search-overlay,
     #web-search-overlay,
     .song-list-toggle,
-    .sync-toast {
+    .sync-toast,
+    .app-footer {
         display: none !important;
     }
 
