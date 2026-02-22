@@ -152,10 +152,6 @@
     /* exported handleAuthClick */
     /* exported handleSignoutClick */
 
-    // TODO(developer): Set to client ID and API key from the Developer Console
-    const CLIENT_ID = '872872836706-n6kk0khb6nkiumpimi0tvs6l4s50tevo.apps.googleusercontent.com';
-    const API_KEY = 'AIzaSyCiBW0xn66Sk_X8foBgmnqqJ3S84p91VE8';
-
     // Discovery doc URL for APIs used by the quickstart
     const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 
@@ -163,11 +159,25 @@
     // included, separated by spaces.
     const SCOPES = 'https://www.googleapis.com/auth/drive';
 
+    let CLIENT_ID = '';
+    let API_KEY = '';
     let tokenClient;
     let gapiInited = false;
     let gisInited = false;
+    let configLoaded = false;
 
     document.getElementById('gDownload').style.visibility = 'hidden';
+
+    // Fetch API keys from Netlify Function
+    fetch('/api/config')
+        .then(r => r.json())
+        .then(cfg => {
+            CLIENT_ID = cfg.googleClientId;
+            API_KEY = cfg.googleApiKey;
+            configLoaded = true;
+            maybeEnableButtons();
+        })
+        .catch(err => console.warn('Could not load config:', err));
 
     /**
      * Callback after api.js is loaded.
@@ -181,6 +191,10 @@
      * discovery doc to initialize the API.
      */
     async function initializeGapiClient() {
+        if (!API_KEY) {
+            gapiInited = 'pending';
+            return;
+        }
         await gapi.client.init({
             apiKey: API_KEY,
             discoveryDocs: [DISCOVERY_DOC],
@@ -193,6 +207,10 @@
      * Callback after Google Identity Services are loaded.
      */
     function gisLoaded() {
+        if (!CLIENT_ID) {
+            gisInited = 'pending';
+            return;
+        }
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
@@ -205,8 +223,24 @@
     /**
      * Enables user interaction after all libraries are loaded.
      */
-    function maybeEnableButtons() {
-        if (gapiInited && gisInited) {
+    async function maybeEnableButtons() {
+        if (!configLoaded) return;
+        if (gapiInited === 'pending') {
+            await gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: [DISCOVERY_DOC],
+            });
+            gapiInited = true;
+        }
+        if (gisInited === 'pending') {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: '',
+            });
+            gisInited = true;
+        }
+        if (gapiInited === true && gisInited === true) {
             document.getElementById('gDownload').style.visibility = 'visible';
         }
     }
