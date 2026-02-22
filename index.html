@@ -53,6 +53,14 @@
                         <option value="#">♯</option>
                     </select>
                 </label>
+                <label for="sync-provider">Sync:
+                    <select id="sync-provider">
+                        <option value="">-</option>
+                        <option value="gdrive">Google Drive</option>
+                        <option value="pcloud">pCloud</option>
+                    </select>
+                    <button id="sync-provider-config" class="sync-provider-config" title="Configurer" hidden>⚙</button>
+                </label>
             </div>
         </span>
 
@@ -135,15 +143,37 @@
                 </div>
             </div>
             <div id="ug-credentials-form" class="ug-credentials-form" hidden>
-                <p>Connectez-vous avec votre compte Ultimate Guitar</p>
+                <p>Sign in with your Ultimate Guitar account</p>
                 <input type="text" id="ug-username" placeholder="Email" autocomplete="username">
-                <input type="password" id="ug-password" placeholder="Mot de passe" autocomplete="current-password">
-                <button id="ug-credentials-save">Se connecter</button>
+                <input type="password" id="ug-password" placeholder="Password" autocomplete="current-password">
+                <button id="ug-credentials-save">Sign in</button>
             </div>
             <div id="web-search-status" class="web-search-status" hidden></div>
             <ul id="web-search-results" class="song-list-items"></ul>
             <div class="web-search-footer">
-                <button id="ug-logout" class="ug-logout" hidden>Déconnexion UG</button>
+                <button id="ug-logout" class="ug-logout" hidden>Sign out UG</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pcloud-settings-overlay" class="song-list-overlay" hidden>
+        <div class="song-list-panel">
+            <div class="song-list-header">
+                <div class="song-list-header-row">
+                    <span style="font-weight:bold; flex:1;">pCloud</span>
+                    <button id="pcloud-settings-close" class="song-list-close" title="Close">×</button>
+                </div>
+            </div>
+            <div id="pcloud-credentials-form" class="ug-credentials-form">
+                <p>Sign in with your pCloud account</p>
+                <input type="email" id="pcloud-username" placeholder="Email" autocomplete="username">
+                <input type="password" id="pcloud-password" placeholder="Password" autocomplete="current-password">
+                <input type="text" id="pcloud-foldername" placeholder="Folder (default: SongChords)" value="SongChords">
+                <div id="pcloud-settings-status" class="web-search-status" hidden></div>
+                <button id="pcloud-credentials-save">Sign in</button>
+            </div>
+            <div class="web-search-footer">
+                <button id="pcloud-logout" class="ug-logout" hidden>Sign out pCloud</button>
             </div>
         </div>
     </div>
@@ -157,7 +187,7 @@
 </script>
 <script type="module" src="songchords.js"></script>
 <script type="module" src="websearch.js"></script>
-<script type="module" src="g/sync.js"></script>
+<script type="module" src="sync.js"></script>
 
 <script type="text/javascript">
     /* exported gapiLoaded */
@@ -179,7 +209,9 @@
     let gisInited = false;
     let configLoaded = false;
 
-    document.getElementById('gDownload').style.visibility = 'hidden';
+    // Show sync button immediately (provider routing handled by sync.js)
+    // It was previously hidden until Google Drive loaded; now it's always visible
+    // because pCloud doesn't need gapi.
 
     // Fetch API keys from Netlify Function
     fetch('/api/config')
@@ -253,9 +285,7 @@
             });
             gisInited = true;
         }
-        if (gapiInited === true && gisInited === true) {
-            document.getElementById('gDownload').style.visibility = 'visible';
-        }
+        // Google Drive API ready (gapi + gis both initialized)
     }
 
 </script>

@@ -1,5 +1,3 @@
-import SongStorage from "../songchordsAPI.js";
-
 import { songStorage, updateSongSelector, extractGroup } from "../songchords.js";
 
 
@@ -8,7 +6,7 @@ let songFolderId;
 // Google Drive connection status
 const gdriveStatus = document.getElementById("gdrive-status");
 
-function isGdriveConnected() {
+export function isGdriveConnected() {
     try {
         return gapi.client.getToken() !== null;
     } catch {
@@ -16,14 +14,14 @@ function isGdriveConnected() {
     }
 }
 
-function updateGdriveStatus() {
+export function updateGdriveStatus() {
     const connected = isGdriveConnected();
     gdriveStatus.classList.toggle("connected", connected);
     gdriveStatus.classList.toggle("disconnected", !connected);
     gdriveStatus.title = connected ? "Google Drive: connected" : "Google Drive: disconnected";
 }
 
-function ensureGdriveAuth() {
+export function ensureGdriveAuth() {
     return new Promise((resolve, reject) => {
         if (isGdriveConnected()) {
             resolve();
@@ -45,40 +43,7 @@ function ensureGdriveAuth() {
 // Check status periodically
 setInterval(updateGdriveStatus, 30000);
 
-// Toast notification helpers
-const syncToast = document.getElementById("sync-toast");
-const syncToastIcon = document.getElementById("sync-toast-icon");
-const syncToastMessage = document.getElementById("sync-toast-message");
-const syncToastProgress = document.getElementById("sync-toast-progress");
-const syncToastBar = document.getElementById("sync-toast-bar");
-let toastTimer = null;
-
-function showToast(message, icon, { type = "", progress = false } = {}) {
-    clearTimeout(toastTimer);
-    syncToast.className = "sync-toast" + (type ? " sync-toast-" + type : "");
-    syncToastIcon.textContent = icon;
-    syncToastIcon.classList.toggle("spin", type === "");
-    syncToastMessage.textContent = message;
-    syncToastProgress.hidden = !progress;
-    syncToastBar.style.width = "0%";
-    syncToast.hidden = false;
-}
-
-function updateToastProgress(current, total) {
-    syncToastBar.style.width = Math.round((current / total) * 100) + "%";
-}
-
-function hideToast(delay = 2500) {
-    toastTimer = setTimeout(() => {
-        syncToast.style.animation = "sync-toast-out 0.3s ease-in forwards";
-        setTimeout(() => {
-            syncToast.hidden = true;
-            syncToast.style.animation = "";
-        }, 300);
-    }, delay);
-}
-
-function refreshAllGroups() {
+export function refreshAllGroups() {
     const allSongs = songStorage.getAllSongsStorage();
     for (const [key, song] of Object.entries(allSongs)) {
         const group = extractGroup(song.songchord || "");
@@ -86,60 +51,30 @@ function refreshAllGroups() {
     }
 }
 
-const connectButton = document.getElementById("gDownload");
-connectButton.addEventListener("click", async function () {
-    showToast("Connexion Google Drive…", "⇅", { progress: true });
-    let dCount = 0;
-    try {
-        await handleAuthClick(() => {
-            updateGdriveStatus();
-            refreshAllGroups();
-            updateSongSelector();
-            showToast("Synchronisation terminée", "✓", { type: "success" });
-            hideToast();
-        },
-            (cFiles) => {
-                dCount++;
-                showToast(`Téléchargement ${dCount} / ${cFiles}…`, "⇅", { progress: true });
-                updateToastProgress(dCount, cFiles);
-            }
-        );
-    } catch (err) {
+export async function gdriveSyncAll(onProgress, onDone) {
+    await handleAuthClick(() => {
         updateGdriveStatus();
-        showToast("Erreur sync: " + (err.message || err), "✗", { type: "error" });
-        hideToast(4000);
-    }
-});
-
-
-const saveButton = document.getElementById("save");
-saveButton.addEventListener("click", async function () {
-    const songName = songStorage.getSongInfoFromStorage("songchordname") || "unnamed";
-    const fileId = songStorage.getSongInfoFromStorage("gId");
-    const songText = songStorage.getSongInfoFromStorage("songchord");
-
-    showToast(`Sauvegarde "${songName}"…`, "💾");
-    try {
-        await ensureGdriveAuth();
-        if (fileId && await existsGFile(fileId)) {
-            await updateGoogleFile(songName, fileId, songText);
-            showToast(`"${songName}" sauvegardé`, "✓", { type: "success" });
-        } else {
-            const newFileId = await createGFile(songName, songText);
-            songStorage.recordSongInStorage("gId", newFileId.id);
-            showToast(`"${songName}" créé sur Drive`, "✓", { type: "success" });
-        }
-        updateGdriveStatus();
-        const group = extractGroup(songText);
-        songStorage.recordSongInStorage("group", group);
+        refreshAllGroups();
         updateSongSelector();
-        hideToast();
-    } catch (err) {
-        updateGdriveStatus();
-        showToast("Erreur: " + (err.message || err), "✗", { type: "error" });
-        hideToast(4000);
+        if (onDone) onDone();
+    },
+        (cFiles) => {
+            if (onProgress) onProgress(cFiles);
+        }
+    );
+}
+
+export async function gdriveSaveFile(songName, songText, fileId) {
+    await ensureGdriveAuth();
+    if (fileId && await existsGFile(fileId)) {
+        await updateGoogleFile(songName, fileId, songText);
+        return { action: "updated" };
+    } else {
+        const newFile = await createGFile(songName, songText);
+        return { action: "created", id: newFile.id };
     }
-});
+}
+
 
 /**
    * Record file in localstorage a file
@@ -326,7 +261,7 @@ const driveUploadPath = 'https://www.googleapis.com/upload/drive/v3/files';
      * @method updateFile
      * @param {String} driveId Google Drive file identifier
      * @param {String} newData Data to put into the file
-     * @return {Promise|Object} A promise of the result that returns 
+     * @return {Promise|Object} A promise of the result that returns
      * a story description: {driveId, driveVersion, name, ifid}
      */
 function updateGFile(driveId, fileName, newData) {
@@ -359,7 +294,7 @@ function updateGFile(driveId, fileName, newData) {
  * @method renameFile
  * @param {String} driveId Google Drive file identifier
  * @param {String} newName New name that will be displayed in drive
- * @return {Promise|Object} A promise of the result that returns 
+ * @return {Promise|Object} A promise of the result that returns
  * a file description: {driveId, driveVersion, name, ifid}
  */
 async function renameGFile(driveId, newName) {
@@ -382,13 +317,13 @@ async function renameGFile(driveId, newName) {
  * @method createFile
  * @param {String} name Name of the new file on Google Drive
  * @param {String} data Data to put into the file
- * @return {Promise|Object} A promise of the result that returns 
+ * @return {Promise|Object} A promise of the result that returns
  * a file description: {driveId, driveVersion, name, ifid}
  */
 async function createGFile(name, data) {
-    // Current version of gapi.client.drive is not capable of 
+    // Current version of gapi.client.drive is not capable of
     // uploading the file so we'll do it with more generic
-    // interface. This will create file with given name and 
+    // interface. This will create file with given name and
     // properties in one request with multipart request.
 
     // Some random string that is unlikely to be in transmitted data:
@@ -428,32 +363,6 @@ async function createGFile(name, data) {
             (error) => reject(error())
         );
     });
-}
-
-async function uploadBasic() {
-
-    const requestBody = {
-        name: 'Test123.txt',
-        parents: [songFolderId]
-    };
-
-    const myBlob = new Blob(["Test de corps"], { type: "text/plain" });
-    const myFile = new File([myBlob], "Test123.txt");
-    const media = {
-        mimeType: 'text/plain',
-        body: myFile
-    };
-    try {
-        const file = await gapi.client.drive.files.create({
-            resource: requestBody,
-            media: media,
-            fields: 'id',
-        });
-        return file.data.id;
-    } catch (err) {
-        // TODO(developer) - Handle error
-        throw err;
-    }
 }
 
 window.recordFile = recordFile

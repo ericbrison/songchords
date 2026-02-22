@@ -74,6 +74,17 @@ export default class SongStorage {
         return null;
     }
 
+    getSongIndexFromPcloudId(fileId) {
+        const songs = Object.entries(this.getAllSongsStorage());
+
+        for (const [key, song] of songs) {
+            if (song.pcloudFileId === fileId) {
+                return key;
+            }
+        }
+        return null;
+    }
+
 
 
     getSongInfoOfIndex(index) {

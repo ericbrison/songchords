@@ -132,6 +132,28 @@ header .button {
 .settings-dropdown select {
     height: 1.5rem;
     font-size: 0.85rem;
+    min-width: 7rem;
+}
+
+.sync-provider-config {
+    height: 1.5rem;
+    min-width: 1.5rem;
+    font-size: 0.85rem;
+    padding: 0;
+    border: solid 1px #ccc;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    margin-left: 0;
+}
+
+.sync-provider-config:hover {
+    border-color: #3b3bc8;
+    background: #e8e8f8;
+}
+
+.sync-provider-config[hidden] {
+    display: none;
 }
 
 .button-edit-gdownload {
@@ -594,7 +616,7 @@ main .button-delete button {
 }
 
 .song-list-items:empty::after {
-    content: "Aucune chanson trouvée";
+    content: "No songs found";
     display: block;
     text-align: center;
     padding: 2rem 1rem;
@@ -1025,6 +1047,7 @@ footer.print-footer {
     .song-list-overlay,
     .web-search-overlay,
     #web-search-overlay,
+    #pcloud-settings-overlay,
     .song-list-toggle,
     .sync-toast,
     .app-footer {

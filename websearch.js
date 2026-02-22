@@ -207,7 +207,7 @@ async function searchAndDisplay() {
         if (err.message.includes("Login failed")) {
             clearUGCredentials();
             showCredentialsForm();
-            setWebSearchStatus("Identifiants invalides, veuillez réessayer.", true, false);
+            setWebSearchStatus("Invalid credentials, please try again.", true, false);
         } else {
             setWebSearchStatus("Error: " + err.message, true, false);
         }
@@ -219,7 +219,7 @@ async function handleCredentialsSave() {
     const password = ugPasswordInput.value;
     if (!username || !password) return;
 
-    setWebSearchStatus("Connexion…", false, true);
+    setWebSearchStatus("Connecting…", false, true);
     saveUGCredentials(username, password);
 
     try {
@@ -234,9 +234,9 @@ async function handleCredentialsSave() {
     } catch (err) {
         clearUGCredentials();
         if (err.message.includes("Login failed")) {
-            setWebSearchStatus("Identifiants invalides, veuillez réessayer.", true, false);
+            setWebSearchStatus("Invalid credentials, please try again.", true, false);
         } else {
-            setWebSearchStatus("Erreur de connexion: " + err.message, true, false);
+            setWebSearchStatus("Connection error: " + err.message, true, false);
         }
     }
 }
