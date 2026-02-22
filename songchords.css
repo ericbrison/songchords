@@ -709,6 +709,83 @@ main .button-delete button {
     content: "";
 }
 
+.ug-credentials-form {
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.ug-credentials-form[hidden] {
+    display: none;
+}
+
+.ug-credentials-form p {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: #555;
+    text-align: center;
+}
+
+.ug-credentials-form input {
+    width: 100%;
+    max-width: 280px;
+    height: 2.2rem;
+    font-size: 1rem;
+    padding: 0 0.5rem;
+    border: solid 1px #ccc;
+    border-radius: 4px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.ug-credentials-form input:focus {
+    border-color: #3b3bc8;
+}
+
+.ug-credentials-form button {
+    width: 100%;
+    max-width: 280px;
+    height: 2.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    background: #3b3bc8;
+    color: white;
+    cursor: pointer;
+    margin-top: 0.3rem;
+}
+
+.ug-credentials-form button:hover {
+    background: #2a2aab;
+}
+
+.web-search-footer {
+    padding: 0.5rem 0.75rem;
+    text-align: center;
+}
+
+.ug-logout {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    border: solid 1px #ccc;
+    border-radius: 4px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+}
+
+.ug-logout:hover {
+    border-color: #c0392b;
+    color: #c0392b;
+}
+
+.ug-logout[hidden] {
+    display: none;
+}
+
 /* ==============
    SYNC TOAST
 ================== */

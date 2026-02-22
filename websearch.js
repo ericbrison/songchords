@@ -11,14 +11,61 @@ const webSearchClose = document.getElementById("web-search-close");
 const webSearchResults = document.getElementById("web-search-results");
 const webSearchStatus = document.getElementById("web-search-status");
 const songListWebSearch = document.getElementById("song-list-web-search");
+const ugCredentialsForm = document.getElementById("ug-credentials-form");
+const ugUsernameInput = document.getElementById("ug-username");
+const ugPasswordInput = document.getElementById("ug-password");
+const ugCredentialsSave = document.getElementById("ug-credentials-save");
+const ugLogoutBtn = document.getElementById("ug-logout");
+
+// ----------------------------
+// ---- UG Credentials -------
+// ----------------------------
+
+function getUGCredentials() {
+    const username = localStorage.getItem("ug_username");
+    const password = localStorage.getItem("ug_password");
+    if (username && password) return { username, password };
+    return null;
+}
+
+function saveUGCredentials(username, password) {
+    localStorage.setItem("ug_username", username);
+    localStorage.setItem("ug_password", password);
+}
+
+function clearUGCredentials() {
+    localStorage.removeItem("ug_username");
+    localStorage.removeItem("ug_password");
+}
+
+function showCredentialsForm() {
+    ugCredentialsForm.hidden = false;
+    ugLogoutBtn.hidden = true;
+    ugUsernameInput.value = "";
+    ugPasswordInput.value = "";
+    ugUsernameInput.focus();
+}
+
+function hideCredentialsForm() {
+    ugCredentialsForm.hidden = true;
+}
+
+function updateLogoutButton() {
+    ugLogoutBtn.hidden = !getUGCredentials();
+}
 
 // ----------------------------
 // ---- UG API ----------------
 // ----------------------------
 
 async function ugApiFetch(action, params) {
-    const qs = new URLSearchParams({ action, ...params });
-    const response = await fetch(`${UG_API}?${qs}`);
+    const credentials = getUGCredentials();
+    if (!credentials) throw new Error("No credentials");
+    const response = await fetch(UG_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...params, ...credentials }),
+    });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
     return data;
@@ -139,6 +186,12 @@ async function searchAndDisplay() {
     const query = webSearchInput.value.trim();
     if (!query) return;
 
+    if (!getUGCredentials()) {
+        showCredentialsForm();
+        return;
+    }
+
+    hideCredentialsForm();
     webSearchResults.innerHTML = "";
     setWebSearchStatus("Searching…", false, true);
 
@@ -151,8 +204,48 @@ async function searchAndDisplay() {
             renderWebSearchResults(results);
         }
     } catch (err) {
-        setWebSearchStatus("Error: " + err.message, true, false);
+        if (err.message.includes("Login failed")) {
+            clearUGCredentials();
+            showCredentialsForm();
+            setWebSearchStatus("Identifiants invalides, veuillez réessayer.", true, false);
+        } else {
+            setWebSearchStatus("Error: " + err.message, true, false);
+        }
     }
+}
+
+async function handleCredentialsSave() {
+    const username = ugUsernameInput.value.trim();
+    const password = ugPasswordInput.value;
+    if (!username || !password) return;
+
+    setWebSearchStatus("Connexion…", false, true);
+    saveUGCredentials(username, password);
+
+    try {
+        // Test credentials with a dummy search
+        await ugApiFetch("search", { query: "test" });
+        hideCredentialsForm();
+        updateLogoutButton();
+        setWebSearchStatus("", false, false);
+        // Run the actual search if there's a query
+        const query = webSearchInput.value.trim();
+        if (query) searchAndDisplay();
+    } catch (err) {
+        clearUGCredentials();
+        if (err.message.includes("Login failed")) {
+            setWebSearchStatus("Identifiants invalides, veuillez réessayer.", true, false);
+        } else {
+            setWebSearchStatus("Erreur de connexion: " + err.message, true, false);
+        }
+    }
+}
+
+function handleLogout() {
+    clearUGCredentials();
+    webSearchResults.innerHTML = "";
+    setWebSearchStatus("", false, false);
+    showCredentialsForm();
 }
 
 function openWebSearch() {
@@ -160,6 +253,8 @@ function openWebSearch() {
     webSearchInput.value = "";
     webSearchResults.innerHTML = "";
     setWebSearchStatus("", false);
+    hideCredentialsForm();
+    updateLogoutButton();
     webSearchOverlay.hidden = false;
     webSearchInput.focus();
 }
@@ -178,6 +273,13 @@ webSearchBtn.addEventListener("click", searchAndDisplay);
 webSearchInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") searchAndDisplay();
 });
+
+ugCredentialsSave.addEventListener("click", handleCredentialsSave);
+ugPasswordInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleCredentialsSave();
+});
+
+ugLogoutBtn.addEventListener("click", handleLogout);
 
 webSearchClose.addEventListener("click", closeWebSearch);
 webSearchOverlay.addEventListener("click", (e) => {

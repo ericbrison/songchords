@@ -130,8 +130,17 @@
                     <button id="web-search-close" class="song-list-close" title="Close">×</button>
                 </div>
             </div>
+            <div id="ug-credentials-form" class="ug-credentials-form" hidden>
+                <p>Connectez-vous avec votre compte Ultimate Guitar</p>
+                <input type="text" id="ug-username" placeholder="Email" autocomplete="username">
+                <input type="password" id="ug-password" placeholder="Mot de passe" autocomplete="current-password">
+                <button id="ug-credentials-save">Se connecter</button>
+            </div>
             <div id="web-search-status" class="web-search-status" hidden></div>
             <ul id="web-search-results" class="song-list-items"></ul>
+            <div class="web-search-footer">
+                <button id="ug-logout" class="ug-logout" hidden>Déconnexion UG</button>
+            </div>
         </div>
     </div>
 

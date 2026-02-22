@@ -24,12 +24,11 @@ function ugHeaders(token) {
   return h;
 }
 
-async function login() {
-  const { UG_USERNAME, UG_PASSWORD } = process.env;
-  if (!UG_USERNAME || !UG_PASSWORD) {
-    throw new Error("Missing UG_USERNAME or UG_PASSWORD env vars");
+async function login(username, password) {
+  if (!username || !password) {
+    throw new Error("Missing username or password");
   }
-  const url = `${UG_API}/auth/login?username=${encodeURIComponent(UG_USERNAME)}&password=${encodeURIComponent(UG_PASSWORD)}`;
+  const url = `${UG_API}/auth/login?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
   const res = await fetch(url, { method: "PUT", headers: ugHeaders() });
   const data = await res.json();
   if (!res.ok) throw new Error(`Login failed (${res.status}): ${data.error?.message || JSON.stringify(data)}`);
@@ -45,16 +44,25 @@ async function ugFetch(path, token) {
 }
 
 export default async (req) => {
-  const params = new URL(req.url).searchParams;
-  const action = params.get("action");
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
 
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return new Response("Invalid JSON body", { status: 400 });
+  }
+
+  const { action, username, password } = body;
   if (!action) return new Response("Missing action param", { status: 400 });
 
   try {
-    const token = await login();
+    const token = await login(username, password);
 
     if (action === "search") {
-      const query = params.get("query");
+      const query = body.query;
       if (!query) return new Response("Missing query param", { status: 400 });
       const data = await ugFetch(
         `/tab/search?title=${encodeURIComponent(query)}&type[]=300&page=1`,
@@ -64,7 +72,7 @@ export default async (req) => {
     }
 
     if (action === "tab") {
-      const id = params.get("id");
+      const id = body.id;
       if (!id) return new Response("Missing id param", { status: 400 });
       const data = await ugFetch(
         `/tab/info?tab_id=${encodeURIComponent(id)}&tab_access_type=private`,
