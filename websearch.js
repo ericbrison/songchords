@@ -40,7 +40,6 @@ function clearUGCredentials() {
 
 function showCredentialsForm() {
     ugCredentialsForm.hidden = false;
-    ugLogoutBtn.hidden = true;
     ugUsernameInput.value = "";
     ugPasswordInput.value = "";
     ugUsernameInput.focus();
@@ -81,7 +80,7 @@ async function searchUG(query) {
             artist_name: r.artist_name || "",
             tab_id: r.id,
             rating: r.rating || 0,
-            votes: r.votes || 0
+            votes: r.votes || 0,
         }));
 }
 
@@ -91,7 +90,6 @@ async function fetchUGTab(tabId) {
         || data.tab_view?.wiki_tab?.content
         || data.content;
     if (!content) {
-        console.log("UG tab response:", JSON.stringify(data).substring(0, 2000));
         throw new Error("No tab content found");
     }
     return convertUGContent(content);
@@ -232,10 +230,13 @@ async function handleCredentialsSave() {
         const query = webSearchInput.value.trim();
         if (query) searchAndDisplay();
     } catch (err) {
-        clearUGCredentials();
         if (err.message.includes("Login failed")) {
+            clearUGCredentials();
             setWebSearchStatus("Invalid credentials, please try again.", true, false);
         } else {
+            // Keep credentials on non-auth errors (network, server, etc.)
+            hideCredentialsForm();
+            updateLogoutButton();
             setWebSearchStatus("Connection error: " + err.message, true, false);
         }
     }
@@ -267,6 +268,7 @@ function closeWebSearch() {
 // ---- Event listeners -------
 // ----------------------------
 
+updateLogoutButton();
 songListWebSearch.addEventListener("click", openWebSearch);
 
 webSearchBtn.addEventListener("click", searchAndDisplay);
