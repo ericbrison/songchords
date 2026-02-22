@@ -1,4 +1,4 @@
-import { songStorage, updateSongSelector, extractGroup } from "./songchords.js";
+import { songStorage, updateSongSelector, extractGroup, resetSong } from "./songchords.js";
 import { gdriveSyncAll, gdriveSaveFile, ensureGdriveAuth, isGdriveConnected, updateGdriveStatus, refreshAllGroups } from "./g/sync.js";
 import { pcloudSyncAll, pcloudSaveFile, isPCloudConfigured, openPCloudSettings, ensurePCloudAuth } from "./pcloud/sync.js";
 
@@ -178,5 +178,29 @@ if (syncProviderConfigBtn) {
         if (provider === "pcloud") {
             openPCloudSettings();
         }
+    });
+}
+
+// ----------------------------
+// ---- Clear local songs -----
+// ----------------------------
+
+const clearLocalSongsBtn = document.getElementById("clear-local-songs");
+if (clearLocalSongsBtn) {
+    clearLocalSongsBtn.addEventListener("click", () => {
+        const allSongs = songStorage.getAllSongsStorage();
+        const count = Object.keys(allSongs).length;
+        if (count === 0) {
+            showToast("No local songs to clear", "ℹ", { type: "success" });
+            hideToast();
+            return;
+        }
+        if (!confirm(`Delete all ${count} local songs? You can re-sync from the server afterwards.`)) return;
+        localStorage.removeItem("songs");
+        localStorage.removeItem("currentSongIndex");
+        resetSong();
+        updateSongSelector();
+        showToast(`${count} local songs cleared`, "✓", { type: "success" });
+        hideToast();
     });
 }

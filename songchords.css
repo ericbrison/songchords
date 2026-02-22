@@ -118,6 +118,7 @@ header .button {
     width: 3.5rem;
     height: 1.5rem;
     font-size: 0.85rem;
+    box-sizing: border-box;
 }
 
 .settings-dropdown input[type=color] {
@@ -127,12 +128,33 @@ header .button {
     border: solid 1px #ccc;
     border-radius: 4px;
     cursor: pointer;
+    box-sizing: border-box;
 }
 
 .settings-dropdown select {
     height: 1.5rem;
     font-size: 0.85rem;
     min-width: 7rem;
+    box-sizing: border-box;
+}
+
+.settings-dropdown .settings-danger-btn {
+    width: 100%;
+    height: 1.8rem;
+    min-width: unset;
+    font-size: 0.8rem;
+    border: solid 1px #ccc;
+    border-radius: 4px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    margin: 0.25rem 0 0 0;
+}
+
+.settings-dropdown .settings-danger-btn:hover {
+    border-color: #c0392b;
+    color: #c0392b;
+    background: #fdf0ef;
 }
 
 .sync-provider-config {
