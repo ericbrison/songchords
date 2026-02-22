@@ -28,7 +28,7 @@ async function searchUG(query) {
     const data = await ugApiFetch("search", { query });
     const tabs = data.tabs || [];
     return tabs
-        .filter(r => r.type_name === "Chords" || r.type === 300)
+        .filter(r => r.type === "Chords")
         .map(r => ({
             song_name: r.song_name || "",
             artist_name: r.artist_name || "",
