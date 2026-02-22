@@ -4,17 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SongChords is a vanilla JavaScript single-page web app that converts plain text song lyrics with chord notations into a formatted, printable display. It runs entirely client-side with no build step. Deployed as a static site to GitHub Pages via `.github/workflows/static.yml`.
+SongChords is a vanilla JavaScript single-page web app that converts plain text song lyrics with chord notations into a formatted, printable display. It runs entirely client-side with no build step. Deployed as a static site to Netlify with a serverless function for CORS proxying.
 
-Demo: https://ericbrison.github.io/songchords/
+Demo: https://aquamarine-fox-4d579a.netlify.app
 
 ## Development
 
 ```bash
 npx http-server .
+# Or with Netlify Functions support:
+netlify dev
 ```
 
-No build, transpilation, or bundling. Edit files directly and reload.
+No build, transpilation, or bundling. Edit files directly and reload. Use `netlify dev` to test the CORS proxy function locally.
 
 ## Architecture
 
@@ -23,7 +25,9 @@ No build, transpilation, or bundling. Edit files directly and reload.
 - `songchords.js` — All application logic: chord parsing, transposition, rendering, UI state management
 - `songchordsAPI.js` — `SongStorage` class wrapping localStorage for song and global settings persistence
 - `songchords.css` — Styling including print layout and CSS custom properties for theming
+- `websearch.js` — Ultimate Guitar web search and tab import, using CORS proxy
 - `g/sync.js` — Google Drive API v3 integration for cloud sync of songs
+- `netlify/functions/cors-proxy.mjs` — Netlify serverless function proxying requests to Ultimate Guitar (avoids CORS)
 
 **Data flow:** User edits plain text in textarea → `renderSong()` parses each line → detects line type (chord/lyrics/tab/separator) → `writeMergeChordLine()` positions chords above lyrics → output rendered in `.song-render` div.
 

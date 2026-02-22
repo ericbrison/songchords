@@ -1,11 +1,6 @@
 import { songStorage, renderSong, resetSong, updateSongSelector, closeSongListPanel } from "./songchords.js";
 
-const CORS_PROXIES = [
-    "https://api.allorigins.win/raw?url=",
-    "https://api.codetabs.com/v1/proxy/?quest=",
-];
-const MAX_RETRIES = 2;
-const UG_SEARCH_URL = "https://www.ultimate-guitar.com/search.php?search_type=title&value=";
+const UG_API = "/api/cors-proxy";
 
 // DOM elements
 const chordArea = document.getElementById("chord-area");
@@ -18,81 +13,50 @@ const webSearchStatus = document.getElementById("web-search-status");
 const songListWebSearch = document.getElementById("song-list-web-search");
 
 // ----------------------------
-// ---- CORS Proxy fetch ------
+// ---- UG API ----------------
 // ----------------------------
 
-async function fetchViaProxy(url) {
-    let lastError;
-    for (const proxyBase of CORS_PROXIES) {
-        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-            try {
-                const response = await fetch(proxyBase + encodeURIComponent(url));
-                if (!response.ok) throw new Error("HTTP " + response.status);
-                return await response.text();
-            } catch (err) {
-                lastError = err;
-            }
-        }
-    }
-    throw new Error("All proxies failed: " + lastError.message);
-}
-
-// ----------------------------
-// ---- UG parsing ------------
-// ----------------------------
-
-const htmlDecoder = document.createElement("textarea");
-function decodeHtmlEntities(text) {
-    htmlDecoder.innerHTML = text;
-    return htmlDecoder.value;
-}
-
-function extractUGData(html) {
-    const match = html.match(/class="js-store"\s+data-content="([^"]+)"/);
-    if (!match) return null;
-    const decoded = match[1]
-        .replace(/&quot;/g, '"')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&#039;/g, "'");
-    return JSON.parse(decoded);
+async function ugApiFetch(action, params) {
+    const qs = new URLSearchParams({ action, ...params });
+    const response = await fetch(`${UG_API}?${qs}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    return data;
 }
 
 async function searchUG(query) {
-    const html = await fetchViaProxy(UG_SEARCH_URL + encodeURIComponent(query));
-    const data = extractUGData(html);
-    if (!data) throw new Error("Could not parse search results");
-
-    const results = data.store?.page?.data?.results || [];
-    return results
-        .filter(r => r.type === "Chords")
+    const data = await ugApiFetch("search", { query });
+    const tabs = data.tabs || [];
+    return tabs
+        .filter(r => r.type_name === "Chords" || r.type === 300)
         .map(r => ({
-            song_name: decodeHtmlEntities(r.song_name || ""),
-            artist_name: decodeHtmlEntities(r.artist_name || ""),
-            tab_url: r.tab_url,
+            song_name: r.song_name || "",
+            artist_name: r.artist_name || "",
+            tab_id: r.id,
             rating: r.rating || 0,
             votes: r.votes || 0
         }));
 }
 
-async function fetchUGTab(url) {
-    const html = await fetchViaProxy(url);
-    const data = extractUGData(html);
-    if (!data) throw new Error("Could not parse tab page");
-
-    const content = data.store?.page?.data?.tab_view?.wiki_tab?.content;
-    if (!content) throw new Error("No tab content found");
+async function fetchUGTab(tabId) {
+    const data = await ugApiFetch("tab", { id: tabId });
+    const content = data.wiki_tab?.content
+        || data.tab_view?.wiki_tab?.content
+        || data.content;
+    if (!content) {
+        console.log("UG tab response:", JSON.stringify(data).substring(0, 2000));
+        throw new Error("No tab content found");
+    }
     return convertUGContent(content);
 }
 
 function convertUGContent(content) {
-    return decodeHtmlEntities(content
+    return content
         .replace(/\[ch\]/g, "")
         .replace(/\[\/ch\]/g, "")
         .replace(/\[tab\]/g, "")
         .replace(/\[\/tab\]/g, "")
-        .replace(/\r\n/g, "\n"));
+        .replace(/\r\n/g, "\n");
 }
 
 // ----------------------------
@@ -158,7 +122,7 @@ function renderWebSearchResults(results) {
             li.classList.add("web-search-importing");
             setWebSearchStatus("Importing…", false, true);
             try {
-                const content = await fetchUGTab(r.tab_url);
+                const content = await fetchUGTab(r.tab_id);
                 importUGSong(r.song_name, r.artist_name, content);
                 closeWebSearch();
             } catch (err) {
