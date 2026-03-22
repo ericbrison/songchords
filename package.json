@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "http-server": "^14.1.1",
+    "netlify-cli": "^23.15.1"
+  }
+}
