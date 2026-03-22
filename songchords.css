@@ -178,6 +178,26 @@ header .button {
     display: none;
 }
 
+.button-edit-save {
+    position: relative;
+}
+
+.dirty-status {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #e6a817;
+    border: solid 2px white;
+    pointer-events: none;
+}
+
+.dirty-status[hidden] {
+    display: none;
+}
+
 .button-edit-gdownload {
     position: relative;
 }
@@ -643,6 +663,21 @@ main {
 
 .song-list-items li.song-group-header:hover {
     background: #e8e8e8;
+}
+
+.song-list-items li.song-list-dirty .song-list-name::after {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #e6a817;
+    border-radius: 50%;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
+
+.song-list-items li.song-list-dirty.song-list-current .song-list-name::after {
+    background: #ffd966;
 }
 
 .song-list-items li.song-grouped {

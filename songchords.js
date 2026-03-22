@@ -42,6 +42,7 @@ const songListClose = document.getElementById("song-list-close");
 const songListNew = document.getElementById("song-list-new");
 const songListFooter = document.getElementById("song-list-footer");
 const songListGroupFilter = document.getElementById("song-list-group-filter");
+const dirtyStatus = document.getElementById("dirty-status");
 
 let cachedSongEntries = [];
 
@@ -150,6 +151,7 @@ function transposeSong(delta) {
 
     chordArea.value = tSong.join('\n');
     songStorage.recordSongInStorage("songchord", chordArea.value);
+    songStorage.recordSongInStorage("dirty", true);
     renderSong(chordArea.value);
 }
 
@@ -685,6 +687,13 @@ It's incredible...
 // Init parameters from localStorage
 // ---------------------------------
 
+function updateDirtyStatus() {
+    if (dirtyStatus) {
+        const isDirty = songStorage.getSongInfoFromStorage("dirty");
+        dirtyStatus.hidden = !isDirty;
+    }
+}
+
 function songDisplayName(song) {
     if (song.title) return song.title;
     return song.songchordname || "";
@@ -744,6 +753,7 @@ export function updateSongSelector() {
     addOption.classList.add("option-edit");
     chordSelectInput.add(addOption)
 
+    updateDirtyStatus();
     updateSongListPanel();
 }
 
@@ -881,6 +891,10 @@ function renderSongList(filter) {
             li.classList.add("song-list-current");
         }
 
+        if (value.dirty) {
+            li.classList.add("song-list-dirty");
+        }
+
         const nameSpan = document.createElement("span");
         nameSpan.classList.add("song-list-name");
         if (lowerFilter) {
@@ -1008,11 +1022,12 @@ readonlyButton.addEventListener("click", function () {
 chordNameInput.addEventListener("change", function () {
     const v = this.value.trim();
     songStorage.recordSongInStorage("songchordname", v);
-
+    songStorage.recordSongInStorage("dirty", true);
 });
 chordArea.addEventListener("input", function () {
     const v = this.value.replaceAll("\t", "        ");
     songStorage.recordSongInStorage("songchord", v);
+    songStorage.recordSongInStorage("dirty", true);
     const meta = parseFrontMatter(v);
     songStorage.recordSongInStorage("title", meta.title);
     songStorage.recordSongInStorage("group", meta.categories.length > 0 ? meta.categories[0] : "");
@@ -1031,6 +1046,7 @@ capoInput.addEventListener("change", function () {
         numberValue = 0;
     }
     songStorage.recordSongInStorage("capo", numberValue);
+    songStorage.recordSongInStorage("dirty", true);
 
     if (numberValue !== 0) {
         if (notationInput.value === "") {
@@ -1067,6 +1083,7 @@ columnInput.addEventListener("change", function () {
 });
 notationInput.addEventListener("change", function () {
     songStorage.recordSongInStorage("notation", this.value);
+    songStorage.recordSongInStorage("dirty", true);
     renderSong(chordArea.value);
 });
 
@@ -1309,6 +1326,7 @@ function saveMetadata() {
     songStorage.recordSongInStorage("author", author);
     songStorage.recordSongInStorage("group", categories.length > 0 ? categories[0] : "");
     songStorage.recordSongInStorage("categories", categories);
+    songStorage.recordSongInStorage("dirty", true);
 
     renderSong(newText);
     updateSongSelector();

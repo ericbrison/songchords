@@ -150,6 +150,7 @@ function addSong(gFileInfo, gFile) {
     songStorage.recordSongInStorage("songchord", body, songIndex);
     songStorage.recordSongInStorage("gId", gId, songIndex);
     songStorage.recordSongInStorage("version", gFileInfo.version, songIndex);
+    songStorage.recordSongInStorage("dirty", false, songIndex);
 }
 
 

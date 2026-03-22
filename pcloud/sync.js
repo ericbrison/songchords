@@ -157,6 +157,7 @@ export async function pcloudSyncAll(onProgress) {
         songStorage.recordSongInStorage("songchord", content, idx);
         songStorage.recordSongInStorage("pcloudFileId", fileId, idx);
         songStorage.recordSongInStorage("pcloudHash", hash, idx);
+        songStorage.recordSongInStorage("dirty", false, idx);
         const meta = parseFrontMatter(content);
         songStorage.recordSongInStorage("title", meta.title, idx);
         songStorage.recordSongInStorage("group", meta.categories.length > 0 ? meta.categories[0] : "", idx);

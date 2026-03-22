@@ -124,6 +124,8 @@ saveButton.addEventListener("click", async function () {
         showToast(`Saving "${songName}"...`, "💾");
         try {
             await pcloudSaveFile(songName, songText, fileId);
+            songStorage.recordSongInStorage("dirty", false);
+            updateSongSelector();
             showToast(`"${songName}" saved`, "✓", { type: "success" });
             hideToast();
         } catch (err) {
@@ -141,6 +143,8 @@ saveButton.addEventListener("click", async function () {
             } else {
                 showToast(`"${songName}" saved`, "✓", { type: "success" });
             }
+            songStorage.recordSongInStorage("dirty", false);
+            updateSongSelector();
             updateGdriveStatus();
             hideToast();
         } catch (err) {
