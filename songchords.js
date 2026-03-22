@@ -877,6 +877,11 @@ function renderSongList(filter) {
             header.classList.add("song-group-header");
             header.textContent = "\uD83D\uDCC1 " + group;
             songListItems.appendChild(header);
+        } else if (!group && lastGroup) {
+            const header = document.createElement("li");
+            header.classList.add("song-group-header");
+            header.textContent = "Uncategorized";
+            songListItems.appendChild(header);
         }
         lastGroup = group;
 
