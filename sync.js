@@ -1,4 +1,4 @@
-import { songStorage, updateSongSelector, extractGroup, resetSong } from "./songchords.js";
+import { songStorage, updateSongSelector, parseFrontMatter, resetSong } from "./songchords.js";
 import { gdriveSyncAll, gdriveSaveFile, ensureGdriveAuth, isGdriveConnected, updateGdriveStatus, refreshAllGroups } from "./g/sync.js";
 import { pcloudSyncAll, pcloudSaveFile, isPCloudConfigured, openPCloudSettings, ensurePCloudAuth } from "./pcloud/sync.js";
 
@@ -112,8 +112,11 @@ saveButton.addEventListener("click", async function () {
     const provider = getSyncProvider();
 
     // Always save locally (already done by songchords.js on input)
-    const group = extractGroup(songText);
-    songStorage.recordSongInStorage("group", group);
+    const meta = parseFrontMatter(songText);
+    songStorage.recordSongInStorage("title", meta.title);
+    songStorage.recordSongInStorage("group", meta.categories.length > 0 ? meta.categories[0] : "");
+    songStorage.recordSongInStorage("categories", meta.categories);
+    songStorage.recordSongInStorage("author", meta.author);
     updateSongSelector();
 
     if (provider === "pcloud") {

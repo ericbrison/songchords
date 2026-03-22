@@ -1,4 +1,4 @@
-const CACHE_NAME = 'songchords-v3';
+const CACHE_NAME = 'songchords-v5';
 
 const ASSETS_TO_CACHE = [
     './',

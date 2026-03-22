@@ -62,8 +62,16 @@
                     <button id="sync-provider-config" class="sync-provider-config" title="Configure" hidden>⚙</button>
                 </label>
                 <button id="clear-local-songs" class="settings-danger-btn">Clear local songs</button>
+                <button id="delete" class="settings-danger-btn">Delete this song</button>
                 <button id="ug-logout" class="settings-danger-btn" hidden>Sign out UG</button>
             </div>
+        </span>
+
+        <span class="button">
+            <button id="song-list-toggle" class="song-list-toggle" title="Song list">☰</button>
+        </span>
+        <span class="button button-edit">
+            <button id="metadata-btn" class="metadata-btn" title="Song metadata">🏷</button>
         </span>
 
         <span class="button button-edit button-edit-only">
@@ -91,10 +99,6 @@
                     <option value="">-</option>
                     <option value="+">New song</option>
                 </select>
-                <button id="song-list-toggle" class="song-list-toggle" title="Song list">☰</button>
-                <span class="button button-fixed button-delete">
-                    <button title="Delete this song" id="delete">🗑</button>
-                </span>
             </header>
             <textarea name="text" id="chord-area" spellcheck="false"></textarea>
         </section>
@@ -126,6 +130,30 @@
             <div class="song-list-footer" id="song-list-footer">
                 <button id="song-list-new" class="song-list-new">+ New song</button>
                 <button id="song-list-web-search" class="song-list-new">🔍 Search on web</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="metadata-overlay" class="song-list-overlay" hidden>
+        <div class="song-list-panel metadata-panel">
+            <div class="song-list-header">
+                <div class="song-list-header-row">
+                    <span style="font-weight:bold; flex:1;">Song metadata</span>
+                    <button id="metadata-close" class="song-list-close" title="Close">×</button>
+                </div>
+            </div>
+            <div class="metadata-form">
+                <label for="metadata-title">Title</label>
+                <input type="text" id="metadata-title" placeholder="Song title" autocomplete="off">
+                <label for="metadata-author">Author</label>
+                <input type="text" id="metadata-author" placeholder="Artist name" autocomplete="off">
+                <label>Categories</label>
+                <div id="metadata-categories-picker" class="metadata-cat-picker"></div>
+                <div class="metadata-new-cat-row">
+                    <input type="text" id="metadata-new-cat-input" placeholder="New category…" autocomplete="off">
+                    <button type="button" id="metadata-new-cat-add" class="metadata-new-cat-btn" title="Add">+</button>
+                </div>
+                <button id="metadata-save" class="metadata-save-btn">Save</button>
             </div>
         </div>
     </div>

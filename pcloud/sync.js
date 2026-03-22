@@ -1,4 +1,4 @@
-import { songStorage, updateSongSelector, extractGroup } from "../songchords.js";
+import { songStorage, updateSongSelector, parseFrontMatter } from "../songchords.js";
 
 const PCLOUD_API = "/api/pcloud";
 
@@ -157,8 +157,11 @@ export async function pcloudSyncAll(onProgress) {
         songStorage.recordSongInStorage("songchord", content, idx);
         songStorage.recordSongInStorage("pcloudFileId", fileId, idx);
         songStorage.recordSongInStorage("pcloudHash", hash, idx);
-        const group = extractGroup(content);
-        songStorage.recordSongInStorage("group", group, idx);
+        const meta = parseFrontMatter(content);
+        songStorage.recordSongInStorage("title", meta.title, idx);
+        songStorage.recordSongInStorage("group", meta.categories.length > 0 ? meta.categories[0] : "", idx);
+        songStorage.recordSongInStorage("categories", meta.categories, idx);
+        songStorage.recordSongInStorage("author", meta.author, idx);
     }
 
     updateSongSelector();

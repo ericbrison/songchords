@@ -1,4 +1,4 @@
-import { songStorage, updateSongSelector, extractGroup } from "../songchords.js";
+import { songStorage, updateSongSelector, parseFrontMatter } from "../songchords.js";
 
 
 let songFolderId;
@@ -46,8 +46,11 @@ setInterval(updateGdriveStatus, 30000);
 export function refreshAllGroups() {
     const allSongs = songStorage.getAllSongsStorage();
     for (const [key, song] of Object.entries(allSongs)) {
-        const group = extractGroup(song.songchord || "");
-        songStorage.recordSongInStorage("group", group, key);
+        const meta = parseFrontMatter(song.songchord || "");
+        songStorage.recordSongInStorage("title", meta.title, key);
+        songStorage.recordSongInStorage("group", meta.categories.length > 0 ? meta.categories[0] : "", key);
+        songStorage.recordSongInStorage("categories", meta.categories, key);
+        songStorage.recordSongInStorage("author", meta.author, key);
     }
 }
 

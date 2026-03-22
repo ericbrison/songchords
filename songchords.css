@@ -203,10 +203,6 @@ header .button {
 }
 
 
-header.chord-header button {
-    height: 1.5rem;
-    min-width: 2rem;
-}
 
 header.toolbar button {
     height: 2.5rem;
@@ -269,16 +265,13 @@ main {
 }
 
 
-main .button-delete button {
-    background: transparent;
-    border-width: 1px;
-}
 
 .chord-name {
     font-family: monospace;
     border: solid 1px grey;
     border-bottom: none;
     flex: 1;
+    padding: 0.3rem 0.5rem;
 }
 
 .song-write {
@@ -310,6 +303,26 @@ main .button-delete button {
     position: relative;
     min-width: calc(9.5cm * var(--column-count));
     padding-top: 1rem;
+}
+
+.song-meta-header {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.3rem;
+    border-bottom: solid 1px #ccc;
+}
+
+.song-meta-title {
+    display: block;
+    font-size: 1.4em;
+    color: var(--text-color);
+}
+
+.song-meta-author {
+    display: block;
+    font-size: 0.9em;
+    font-weight: normal;
+    color: #888;
+    font-style: italic;
 }
 
 .song-render .capo {
@@ -457,13 +470,10 @@ main .button-delete button {
 ================== */
 
 .song-list-toggle {
-    font-size: 1.2rem;
-    min-width: 2rem;
-    height: 1.5rem;
+    font-size: 1.5rem;
+    min-width: 3rem;
+    height: 2.5rem;
     cursor: pointer;
-    background: transparent;
-    border: solid 1px grey;
-    border-radius: 4px;
 }
 
 .song-list-overlay {
@@ -590,7 +600,9 @@ main .button-delete button {
     padding: 0.7rem 1rem;
     min-height: 44px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
     cursor: pointer;
     border-bottom: solid 1px #f0f0f0;
     box-sizing: border-box;
@@ -637,6 +649,19 @@ main .button-delete button {
     padding-left: 1.5rem;
 }
 
+.song-list-name {
+    font-weight: 500;
+}
+
+.song-list-author {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.song-list-current .song-list-author {
+    color: rgba(255, 255, 255, 0.7);
+}
+
 .song-list-items:empty::after {
     content: "No songs found";
     display: block;
@@ -666,6 +691,145 @@ main .button-delete button {
 .song-list-new:hover {
     border-color: #3b3bc8;
     color: #3b3bc8;
+}
+
+/* ==============
+   METADATA DIALOG
+================== */
+
+.metadata-btn {
+    font-size: 1.5rem;
+    min-width: 3rem;
+    height: 2.5rem;
+    cursor: pointer;
+}
+
+.metadata-panel {
+    max-width: 400px;
+}
+
+.metadata-form {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.metadata-form label {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: #555;
+    display: block;
+    padding: 0;
+    border-radius: 0;
+}
+
+.metadata-form label:hover {
+    outline: none;
+    cursor: default;
+}
+
+.metadata-form input[type="text"] {
+    width: 100%;
+    height: 2.2rem;
+    font-size: 1rem;
+    padding: 0 0.5rem;
+    border: solid 1px #ccc;
+    border-radius: 4px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.metadata-form input[type="text"]:focus {
+    border-color: #3b3bc8;
+}
+
+.metadata-cat-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    min-height: 1.5rem;
+}
+
+.metadata-cat-picker:empty::after {
+    content: "No categories yet";
+    font-size: 0.85rem;
+    color: #999;
+    font-style: italic;
+}
+
+.metadata-cat-chip {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.7rem;
+    border: solid 1px #ccc;
+    border-radius: 1rem;
+    background: white;
+    cursor: pointer;
+    color: #555;
+    transition: all 0.15s;
+}
+
+.metadata-cat-chip:hover {
+    border-color: #3b3bc8;
+    color: #3b3bc8;
+}
+
+.metadata-cat-chip.selected {
+    background: #3b3bc8;
+    color: white;
+    border-color: #3b3bc8;
+}
+
+.metadata-cat-chip.selected:hover {
+    background: #2a2aab;
+    border-color: #2a2aab;
+}
+
+.metadata-new-cat-row {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.metadata-new-cat-row input {
+    flex: 1;
+}
+
+.metadata-new-cat-btn {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.3rem;
+    font-weight: bold;
+    border: solid 1px #ccc;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metadata-new-cat-btn:hover {
+    border-color: #3b3bc8;
+    color: #3b3bc8;
+    background: #e8e8f8;
+}
+
+.metadata-save-btn {
+    width: 100%;
+    height: 2.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    background: #3b3bc8;
+    color: white;
+    cursor: pointer;
+    margin-top: 0.5rem;
+}
+
+.metadata-save-btn:hover {
+    background: #2a2aab;
 }
 
 /* ==============
@@ -978,10 +1142,6 @@ body.read-only .button-edit {
     display: none;
 }
 
-body.read-only .button-delete {
-    display: none;
-}
-
 body.read-only .song-list-footer {
     display: none;
 }
@@ -1070,7 +1230,9 @@ footer.print-footer {
     .web-search-overlay,
     #web-search-overlay,
     #pcloud-settings-overlay,
+    #metadata-overlay,
     .song-list-toggle,
+    .metadata-btn,
     .sync-toast,
     .app-footer {
         display: none !important;

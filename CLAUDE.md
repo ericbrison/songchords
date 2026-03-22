@@ -32,13 +32,17 @@ No build, transpilation, or bundling. Edit files directly and reload. Use `netli
 **Data flow:** User edits plain text in textarea → `renderSong()` parses each line → detects line type (chord/lyrics/tab/separator) → `writeMergeChordLine()` positions chords above lyrics → output rendered in `.song-render` div.
 
 **State is entirely localStorage-based:**
-- `localStorage["songs"]` — Object keyed by random IDs, each containing `{songchordname, songchord, notation, capo, gId, version}`
+- `localStorage["songs"]` — Object keyed by random IDs, each containing `{songchordname, songchord, notation, capo, gId, version, author, categories, group}`
 - `localStorage["global"]` — Display settings: `{textfontsize, chordfontsize, chordcolor, textcolor, column, readMode}`
 - `localStorage["currentSongIndex"]` — Active song ID
 
 ## Song Text Format
 
 ```
+---
+author: Artist Name
+categories: Rock, Pop
+---
 Song Title
 ----------
 
@@ -51,8 +55,10 @@ Another lyric line
 > Right-aligned footer text
 ```
 
+- **Front-matter metadata** — Optional YAML-like block at the start of the song text (`---\nauthor: ...\ncategories: ...\n---`). Parsed by `parseFrontMatter()`, stripped from rendering by `stripFrontMatter()`. Updated via `updateFrontMatter()`. Metadata is stored in the song text itself so it syncs automatically with Google Drive/pCloud.
+- Legacy `#category:` lines are still parsed as fallback but converted to front-matter when metadata is saved via the dialog.
 - Chord lines are auto-detected by `isChordLine()` regex (A-G with optional accidentals and extensions like m, maj7, sus4, dim, aug)
-- `---` creates a horizontal separator; `---text---` creates centered section text
+- `---` at the start of the file (followed by metadata) is front-matter; `---` elsewhere creates a horizontal separator; `---text---` creates centered section text
 - `===` forces a page break for print
 - `[Chord]` syntax for inline chords within lyrics
 - Lines ending with `(...)` are italicized annotations

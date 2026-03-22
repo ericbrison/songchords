@@ -419,7 +419,8 @@ function writeMergeChordLine(chordLine, songText) {
  * Main function to render raw text to printed text
  */
 export function renderSong(song) {
-    const lines = song.split('\n');
+    const cleanSong = stripFrontMatter(song);
+    const lines = cleanSong.split('\n');
 
     const capoValue = parseInt(capoInput.value) || 0;
     let previousLineChord = '';
@@ -429,7 +430,23 @@ export function renderSong(song) {
 
     updateStyle(textFontSizeInput.value);
 
-    window.document.title = chordNameInput.value.replace(".txt", "");
+    const meta = parseFrontMatter(song);
+    if (meta.title && meta.author) {
+        window.document.title = `${meta.title} - ${meta.author}`;
+        const header = document.createElement("div");
+        header.classList.add("song-meta-header");
+        const titleEl = document.createElement("span");
+        titleEl.classList.add("song-meta-title");
+        titleEl.textContent = meta.title;
+        header.appendChild(titleEl);
+        const authorEl = document.createElement("span");
+        authorEl.classList.add("song-meta-author");
+        authorEl.textContent = meta.author;
+        header.appendChild(authorEl);
+        songRender.appendChild(header);
+    } else {
+        window.document.title = chordNameInput.value.replace(".txt", "");
+    }
 
 
     lines.forEach((line) => {
@@ -523,9 +540,85 @@ function isCategoryLine(line) {
     return /^#category\s*:/i.test(line.trim());
 }
 
+// ----------------------------
+// ---- Song Metadata (front-matter) ----
+// ----------------------------
+
+const FRONT_MATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
+
+/**
+ * Parse front-matter from song text.
+ * Returns { author, categories: string[] }
+ */
+export function parseFrontMatter(song) {
+    const meta = { title: "", author: "", categories: [] };
+    const match = song.match(FRONT_MATTER_RE);
+    if (!match) {
+        // Fallback: check legacy #category: line
+        const catMatch = song.match(/^#category\s*:\s*(.+)/im);
+        if (catMatch) {
+            meta.categories = catMatch[1].split(",").map(c => c.trim()).filter(Boolean);
+        }
+        return meta;
+    }
+    for (const line of match[1].split("\n")) {
+        const [key, ...rest] = line.split(":");
+        if (!key) continue;
+        const value = rest.join(":").trim();
+        switch (key.trim().toLowerCase()) {
+            case "title":
+                meta.title = value;
+                break;
+            case "author":
+                meta.author = value;
+                break;
+            case "categories":
+                meta.categories = value.split(",").map(c => c.trim()).filter(Boolean);
+                break;
+        }
+    }
+    return meta;
+}
+
+/**
+ * Remove front-matter block from song text for rendering.
+ */
+export function stripFrontMatter(song) {
+    return song.replace(FRONT_MATTER_RE, "");
+}
+
+/**
+ * Build or update front-matter in song text.
+ */
+export function updateFrontMatter(song, meta) {
+    const lines = [];
+    if (meta.title) lines.push(`title: ${meta.title}`);
+    if (meta.author) lines.push(`author: ${meta.author}`);
+    if (meta.categories && meta.categories.length > 0) {
+        lines.push(`categories: ${meta.categories.join(", ")}`);
+    }
+
+    const stripped = song.replace(FRONT_MATTER_RE, "");
+    // Also remove legacy #category: lines
+    const cleaned = stripped.replace(/^#category\s*:.*\r?\n?/gim, "");
+
+    if (lines.length === 0) return cleaned;
+    return "---\n" + lines.join("\n") + "\n---\n" + cleaned;
+}
+
+/**
+ * Extract categories for the group system (replaces extractGroup).
+ */
 export function extractGroup(song) {
-    const match = song.match(/^#category\s*:\s*(.+)/im);
-    return match ? match[1].trim() : "";
+    const meta = parseFrontMatter(song);
+    return meta.categories.length > 0 ? meta.categories[0] : "";
+}
+
+/**
+ * Extract all categories from song text.
+ */
+export function extractCategories(song) {
+    return parseFrontMatter(song).categories;
 }
 
 
@@ -592,14 +685,19 @@ It's incredible...
 // Init parameters from localStorage
 // ---------------------------------
 
+function songDisplayName(song) {
+    if (song.title) return song.title;
+    return song.songchordname || "";
+}
+
 export function updateSongSelector() {
 
     const readOnlyMode = songStorage.getGlobalInfoFromStorage("readMode") === 1;
     const selectedGroups = getSelectedGroups();
 
-    // Sort by song title
+    // Sort by display name
     const recorderSongs = Object.entries(songStorage.getAllSongsStorage()).sort(
-        ([, a], [, b]) => a.songchordname?.localeCompare(b.songchordname)
+        ([, a], [, b]) => songDisplayName(a).localeCompare(songDisplayName(b))
     );
 
     while (chordSelectInput.options.length > 0) {
@@ -612,17 +710,18 @@ export function updateSongSelector() {
     for (const [key, value] of recorderSongs) {
         // Apply category filter (but always keep the current song)
         if (selectedGroups !== null && key !== songStorage.currentSongIndex) {
-            const songGroup = value.group || "";
-            if (!songGroup || !selectedGroups.includes(songGroup)) {
+            const cats = value.categories || [];
+            const songGroup = cats.length > 0 ? cats : (value.group ? [value.group] : []);
+            if (songGroup.length === 0 || !songGroup.some(c => selectedGroups.includes(c))) {
                 continue;
             }
         }
 
         if (key !== songStorage.currentSongIndex) {
-            const newOption = new Option(value.songchordname, key);
+            const newOption = new Option(songDisplayName(value), key);
             chordSelectInput.add(newOption)
         } else {
-            const newOption = new Option(value.songchordname, "-");
+            const newOption = new Option(songDisplayName(value), "-");
 
             if (!readOnlyMode) {
                 newOption.disabled = true;
@@ -659,14 +758,14 @@ function updateSongListPanel() {
             if (!ga && gb) return 1;
             const cmp = ga.localeCompare(gb);
             if (cmp !== 0) return cmp;
-            return (a.songchordname || "").localeCompare(b.songchordname || "");
+            return songDisplayName(a).localeCompare(songDisplayName(b));
         }
     );
 
     // Update toggle text
     if (readOnlyMode) {
-        const currentName = songStorage.getSongInfoFromStorage("songchordname") || "☰";
-        songListToggle.textContent = currentName;
+        const currentSong = songStorage.getSongInfoOfIndex(songStorage.currentSongIndex) || {};
+        songListToggle.textContent = songDisplayName(currentSong) || "☰";
     } else {
         songListToggle.textContent = "☰";
     }
@@ -678,7 +777,12 @@ function updateSongListPanel() {
 function updateGroupFilterOptions() {
     const groups = new Set();
     for (const [, value] of cachedSongEntries) {
-        if (value.group) groups.add(value.group);
+        const cats = value.categories || [];
+        if (cats.length > 0) {
+            cats.forEach(c => groups.add(c));
+        } else if (value.group) {
+            groups.add(value.group);
+        }
     }
 
     const sortedGroups = [...groups].sort((a, b) => a.localeCompare(b));
@@ -724,9 +828,12 @@ function renderSongList(filter) {
     const matchingGroups = new Set();
     if (lowerFilter) {
         for (const [, value] of cachedSongEntries) {
-            const group = value.group || "";
-            if (group && group.toLowerCase().includes(lowerFilter)) {
-                matchingGroups.add(group);
+            const cats = value.categories || [];
+            const allCats = cats.length > 0 ? cats : (value.group ? [value.group] : []);
+            for (const c of allCats) {
+                if (c.toLowerCase().includes(lowerFilter)) {
+                    matchingGroups.add(c);
+                }
             }
         }
     }
@@ -734,20 +841,23 @@ function renderSongList(filter) {
     let lastGroup = null;
 
     for (const [key, value] of cachedSongEntries) {
-        const name = value.songchordname || "";
-        const group = value.group || "";
+        const name = songDisplayName(value);
+        const cats = value.categories || [];
+        const group = cats.length > 0 ? cats[0] : (value.group || "");
 
         // Apply category filter
         if (selectedGroups !== null) {
-            if (!group || !selectedGroups.includes(group)) {
+            const allCats = cats.length > 0 ? cats : (value.group ? [value.group] : []);
+            if (allCats.length === 0 || !allCats.some(c => selectedGroups.includes(c))) {
                 continue;
             }
         }
 
         const nameMatches = !lowerFilter || name.toLowerCase().includes(lowerFilter);
-        const groupMatches = matchingGroups.has(group);
+        const authorMatches = lowerFilter && (value.author || "").toLowerCase().includes(lowerFilter);
+        const groupMatches = matchingGroups.size > 0 && (cats.length > 0 ? cats : (value.group ? [value.group] : [])).some(c => matchingGroups.has(c));
 
-        if (lowerFilter && !nameMatches && !groupMatches) {
+        if (lowerFilter && !nameMatches && !authorMatches && !groupMatches) {
             continue;
         }
 
@@ -771,10 +881,20 @@ function renderSongList(filter) {
             li.classList.add("song-list-current");
         }
 
+        const nameSpan = document.createElement("span");
+        nameSpan.classList.add("song-list-name");
         if (lowerFilter) {
-            li.innerHTML = highlightMatch(name, lowerFilter);
+            nameSpan.innerHTML = highlightMatch(name, lowerFilter);
         } else {
-            li.textContent = name;
+            nameSpan.textContent = name;
+        }
+        li.appendChild(nameSpan);
+
+        if (value.author) {
+            const authorSpan = document.createElement("span");
+            authorSpan.classList.add("song-list-author");
+            authorSpan.textContent = value.author;
+            li.appendChild(authorSpan);
         }
 
         songListItems.appendChild(li);
@@ -809,9 +929,12 @@ export function resetSong() {
     notationInput.value = songStorage.getSongInfoFromStorage("notation") || '';
     chordNameInput.value = songStorage.getSongInfoFromStorage("songchordname") || "MySong";
 
-    // Extract group from song text
-    const group = extractGroup(chordArea.value);
-    songStorage.recordSongInStorage("group", group);
+    // Extract metadata from song text
+    const meta = parseFrontMatter(chordArea.value);
+    songStorage.recordSongInStorage("title", meta.title);
+    songStorage.recordSongInStorage("group", meta.categories.length > 0 ? meta.categories[0] : "");
+    songStorage.recordSongInStorage("categories", meta.categories);
+    songStorage.recordSongInStorage("author", meta.author);
 
     textFontSizeInput.value = songStorage.getGlobalInfoFromStorage("textfontsize") || 12;
     chordFontSizeInput.value = songStorage.getGlobalInfoFromStorage("chordfontsize") || 0;
@@ -890,8 +1013,11 @@ chordNameInput.addEventListener("change", function () {
 chordArea.addEventListener("input", function () {
     const v = this.value.replaceAll("\t", "        ");
     songStorage.recordSongInStorage("songchord", v);
-    const group = extractGroup(v);
-    songStorage.recordSongInStorage("group", group);
+    const meta = parseFrontMatter(v);
+    songStorage.recordSongInStorage("title", meta.title);
+    songStorage.recordSongInStorage("group", meta.categories.length > 0 ? meta.categories[0] : "");
+    songStorage.recordSongInStorage("categories", meta.categories);
+    songStorage.recordSongInStorage("author", meta.author);
     renderSong(v);
     updateSongSelector();
 });
@@ -1082,7 +1208,138 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && !songListOverlay.hidden) {
         closeSongListPanel();
     }
+    if (e.key === 'Escape' && !metadataOverlay.hidden) {
+        closeMetadataDialog();
+    }
 });
+
+// ----------------------------
+// ---- Metadata dialog -------
+// ----------------------------
+
+const metadataOverlay = document.getElementById("metadata-overlay");
+const metadataBtn = document.getElementById("metadata-btn");
+const metadataClose = document.getElementById("metadata-close");
+const metadataTitle = document.getElementById("metadata-title");
+const metadataAuthor = document.getElementById("metadata-author");
+const metadataCategoriesPicker = document.getElementById("metadata-categories-picker");
+const metadataNewCatInput = document.getElementById("metadata-new-cat-input");
+const metadataNewCatBtn = document.getElementById("metadata-new-cat-add");
+const metadataSave = document.getElementById("metadata-save");
+
+let metadataCategories = [];
+
+function getAllKnownCategories() {
+    const cats = new Set();
+    const allSongs = songStorage.getAllSongsStorage();
+    for (const [, song] of Object.entries(allSongs)) {
+        if (song.categories && song.categories.length > 0) {
+            song.categories.forEach(c => cats.add(c));
+        } else if (song.group) {
+            cats.add(song.group);
+        }
+    }
+    return [...cats].sort((a, b) => a.localeCompare(b));
+}
+
+function openMetadataDialog() {
+    const meta = parseFrontMatter(chordArea.value);
+    metadataTitle.value = meta.title;
+    metadataAuthor.value = meta.author;
+    metadataCategories = [...meta.categories];
+    metadataNewCatInput.value = "";
+    renderCategoryPicker();
+    metadataOverlay.hidden = false;
+    metadataTitle.focus();
+}
+
+function closeMetadataDialog() {
+    metadataOverlay.hidden = true;
+}
+
+function renderCategoryPicker() {
+    metadataCategoriesPicker.innerHTML = "";
+    const known = getAllKnownCategories();
+    // Also include currently selected categories that might not be in known yet
+    const all = new Set([...known, ...metadataCategories]);
+    const sorted = [...all].sort((a, b) => a.localeCompare(b));
+
+    for (const cat of sorted) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.classList.add("metadata-cat-chip");
+        if (metadataCategories.includes(cat)) {
+            chip.classList.add("selected");
+        }
+        chip.textContent = cat;
+        chip.addEventListener("click", () => {
+            toggleCategory(cat);
+        });
+        metadataCategoriesPicker.appendChild(chip);
+    }
+}
+
+function toggleCategory(cat) {
+    if (metadataCategories.includes(cat)) {
+        metadataCategories = metadataCategories.filter(c => c !== cat);
+    } else {
+        metadataCategories.push(cat);
+    }
+    renderCategoryPicker();
+}
+
+function addNewCategory() {
+    const cat = metadataNewCatInput.value.trim();
+    if (cat && !metadataCategories.includes(cat)) {
+        metadataCategories.push(cat);
+        metadataNewCatInput.value = "";
+        renderCategoryPicker();
+    }
+}
+
+function saveMetadata() {
+    const title = metadataTitle.value.trim();
+    const author = metadataAuthor.value.trim();
+    const categories = [...metadataCategories];
+
+    const newText = updateFrontMatter(chordArea.value, { title, author, categories });
+    chordArea.value = newText;
+    songStorage.recordSongInStorage("songchord", newText);
+    songStorage.recordSongInStorage("title", title);
+    songStorage.recordSongInStorage("author", author);
+    songStorage.recordSongInStorage("group", categories.length > 0 ? categories[0] : "");
+    songStorage.recordSongInStorage("categories", categories);
+
+    renderSong(newText);
+    updateSongSelector();
+    closeMetadataDialog();
+}
+
+if (metadataBtn) {
+    metadataBtn.addEventListener("click", openMetadataDialog);
+}
+if (metadataClose) {
+    metadataClose.addEventListener("click", closeMetadataDialog);
+}
+if (metadataOverlay) {
+    metadataOverlay.addEventListener("click", (e) => {
+        if (e.target === metadataOverlay) closeMetadataDialog();
+    });
+}
+if (metadataNewCatBtn) {
+    metadataNewCatBtn.addEventListener("click", addNewCategory);
+}
+if (metadataNewCatInput) {
+    metadataNewCatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            addNewCategory();
+        }
+    });
+}
+if (metadataSave) {
+    metadataSave.addEventListener("click", saveMetadata);
+}
 
 deleteButton.addEventListener('click', () => {
     if (window.confirm(`Confirm delete ${chordNameInput.value} ?`)) {
