@@ -67,17 +67,16 @@
             </div>
         </span>
 
-        <span class="button">
+        <span class="button button-song-list">
             <button id="song-list-toggle" class="song-list-toggle" title="Song list">☰</button>
         </span>
-        <span class="button button-edit">
+        <span class="button button-edit button-edit-metadata">
             <button id="metadata-btn" class="metadata-btn" title="Song metadata">🏷</button>
         </span>
 
         <span class="button button-edit button-edit-only">
-            Transpose:
-            <button id="transposeMinus" title="Decrease half tone">-</button>
-            <button id="transposePlus" title="Add half tone">+</button>
+            <button id="transposeMinus" class="transpose-btn" title="Transpose down (− half tone)">♭</button>
+            <button id="transposePlus" class="transpose-btn" title="Transpose up (+ half tone)">♯</button>
         </span>
 
         <span class="elastic"></span>
@@ -89,8 +88,22 @@
         <span class="button button-edit button-edit-gdownload">
             <button id="gDownload" title="Download">⇅</button>
             <span id="gdrive-status" class="gdrive-status" title="Google Drive: disconnected"></span></span>
+        <span class="button button-edit button-preview-toggle">
+            <button id="preview-toggle" title="Show/hide preview">📑</button></span>
         <span class="button button-view-mode">
-            <button id="readonly" title="View mode">👁</button></span>
+            <button id="readonly" title="Toggle view/write mode">👁</button></span>
+        <span class="toolbar-more button-edit">
+            <button id="more-toggle" class="more-toggle" title="More actions">⋮</button>
+            <div id="more-dropdown" class="more-dropdown" hidden>
+                <button id="more-metadata" type="button" hidden>🏷 Metadata</button>
+                <button id="more-save" type="button" hidden>💾 Save</button>
+                <button id="more-preview" type="button" hidden>📑 Toggle preview</button>
+                <button id="more-transpose-down" type="button" hidden>♭ Lower</button>
+                <button id="more-transpose-up" type="button" hidden>♯ Higher</button>
+                <button id="more-print" type="button" hidden>🖨 Print</button>
+                <button id="more-sync" type="button" hidden>⇅ Sync</button>
+            </div>
+        </span>
     </header>
     <main>
         <section class="song-write">

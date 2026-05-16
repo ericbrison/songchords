@@ -772,13 +772,12 @@ function updateSongListPanel() {
         }
     );
 
-    // Update toggle text
-    if (readOnlyMode) {
-        const currentSong = songStorage.getSongInfoOfIndex(songStorage.currentSongIndex) || {};
-        songListToggle.textContent = songDisplayName(currentSong) || "☰";
-    } else {
-        songListToggle.textContent = "☰";
-    }
+    // Update toggle text — show current song name in both edit and view modes
+    const currentSong = songStorage.getSongInfoOfIndex(songStorage.currentSongIndex) || {};
+    const songName = songDisplayName(currentSong);
+    songListToggle.textContent = songName || "☰";
+    songListToggle.classList.toggle("has-name", !!songName);
+    if (typeof scheduleToolbarAdjust === "function") scheduleToolbarAdjust();
 
     updateGroupFilterOptions();
     renderSongList(songListSearch.value);
@@ -828,9 +827,13 @@ function getSelectedGroups() {
     return values;
 }
 
+function normalizeForSearch(s) {
+    return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
 function renderSongList(filter) {
     songListItems.innerHTML = "";
-    const lowerFilter = (filter || "").toLowerCase();
+    const lowerFilter = normalizeForSearch(filter);
     const currentId = songStorage.currentSongIndex;
     const selectedGroups = getSelectedGroups();
 
@@ -841,7 +844,7 @@ function renderSongList(filter) {
             const cats = value.categories || [];
             const allCats = cats.length > 0 ? cats : (value.group ? [value.group] : []);
             for (const c of allCats) {
-                if (c.toLowerCase().includes(lowerFilter)) {
+                if (normalizeForSearch(c).includes(lowerFilter)) {
                     matchingGroups.add(c);
                 }
             }
@@ -963,11 +966,13 @@ export function resetSong() {
 }
 
 
+const previewToggleButton = document.getElementById("preview-toggle");
+
 /**
- * 0 : Write & Read
- * 1 : Read Only
- * 2 : Write Only
- * @param {0,1,2} readMode 
+ * 0 : Write & Read (write mode with preview)
+ * 1 : View (read-only)
+ * 2 : Write Only (write mode without preview)
+ * @param {0,1,2} readMode
  */
 function viewMode(readMode) {
 
@@ -975,30 +980,45 @@ function viewMode(readMode) {
         case 1:
             readonlyButton.classList.remove("active-write");
             readonlyButton.classList.add("active-read");
+            previewToggleButton.classList.remove("active-preview");
             document.body.classList.remove("read-write");
             document.body.classList.remove("write-only");
             document.body.classList.add("read-only");
             break;
-        case 2: // write only
+        case 2: // write only (preview hidden)
             readonlyButton.classList.remove("active-read");
-            readonlyButton.classList.add("active-write");
+            readonlyButton.classList.remove("active-write");
+            previewToggleButton.classList.remove("active-preview");
             document.body.classList.remove("read-write");
             document.body.classList.remove("read-only");
             document.body.classList.add("write-only");
             break;
-        default: // read write
+        default: // read write (write with preview)
             readonlyButton.classList.remove("active-read");
             readonlyButton.classList.remove("active-write");
+            previewToggleButton.classList.add("active-preview");
             document.body.classList.add("read-write");
             document.body.classList.remove("read-only");
             document.body.classList.remove("write-only");
     }
 
+    if (typeof scheduleToolbarAdjust === "function") scheduleToolbarAdjust();
+}
+
+function getPreviewVisible() {
+    let pv = songStorage.getGlobalInfoFromStorage("previewVisible");
+    if (pv === null || pv === undefined) {
+        const rm = songStorage.getGlobalInfoFromStorage("readMode");
+        pv = rm !== 2;
+        songStorage.setGlobalInfoIntoStorage("previewVisible", pv);
+    }
+    return pv;
 }
 
 updateSongSelector();
 resetSong();
 viewMode(songStorage.getGlobalInfoFromStorage("readMode") || 0);
+getPreviewVisible();
 
 
 // -------------------
@@ -1016,12 +1036,31 @@ saveButton.addEventListener("click", function () {
 
 readonlyButton.addEventListener("click", function () {
     const readMode = songStorage.getGlobalInfoFromStorage("readMode") || 0;
-    const newReadMode = (readMode + 1) % 3;
+    let newReadMode;
+    if (readMode === 1) {
+        // Leaving view → restore previous write mode based on previewVisible
+        newReadMode = getPreviewVisible() ? 0 : 2;
+    } else {
+        // Entering view from any write mode
+        newReadMode = 1;
+    }
     songStorage.setGlobalInfoIntoStorage("readMode", newReadMode);
     viewMode(newReadMode);
 
     updateSongSelector();
 
+});
+
+previewToggleButton.addEventListener("click", function () {
+    const readMode = songStorage.getGlobalInfoFromStorage("readMode") || 0;
+    if (readMode === 1) return; // not actionable in view mode (button hidden anyway)
+    const newPreviewVisible = readMode !== 0;
+    const newReadMode = newPreviewVisible ? 0 : 2;
+    songStorage.setGlobalInfoIntoStorage("previewVisible", newPreviewVisible);
+    songStorage.setGlobalInfoIntoStorage("readMode", newReadMode);
+    viewMode(newReadMode);
+
+    updateSongSelector();
 });
 
 chordNameInput.addEventListener("change", function () {
@@ -1392,6 +1431,133 @@ document.addEventListener("click", (e) => {
         settingsDropdown.hidden = true;
     }
 });
+
+// More-actions dropdown (mobile)
+const moreToggle = document.getElementById("more-toggle");
+const moreDropdown = document.getElementById("more-dropdown");
+const morePrint = document.getElementById("more-print");
+const moreSync = document.getElementById("more-sync");
+const moreMetadata = document.getElementById("more-metadata");
+const moreTransposeDown = document.getElementById("more-transpose-down");
+const moreTransposeUp = document.getElementById("more-transpose-up");
+const moreSave = document.getElementById("more-save");
+const morePreview = document.getElementById("more-preview");
+const gDownloadButton = document.getElementById("gDownload");
+
+moreToggle.addEventListener("click", () => {
+    moreDropdown.hidden = !moreDropdown.hidden;
+});
+
+document.addEventListener("click", (e) => {
+    if (!moreDropdown.hidden && !e.target.closest(".toolbar-more")) {
+        moreDropdown.hidden = true;
+    }
+});
+
+morePrint.addEventListener("click", () => {
+    moreDropdown.hidden = true;
+    printButton.click();
+});
+
+moreSync.addEventListener("click", () => {
+    moreDropdown.hidden = true;
+    gDownloadButton.click();
+});
+
+moreMetadata.addEventListener("click", () => {
+    moreDropdown.hidden = true;
+    metadataBtn.click();
+});
+
+moreTransposeDown.addEventListener("click", () => {
+    moreDropdown.hidden = true;
+    transposeMinusButton.click();
+});
+
+moreTransposeUp.addEventListener("click", () => {
+    moreDropdown.hidden = true;
+    transposePlusButton.click();
+});
+
+moreSave.addEventListener("click", () => {
+    moreDropdown.hidden = true;
+    saveButton.click();
+});
+
+morePreview.addEventListener("click", () => {
+    moreDropdown.hidden = true;
+    previewToggleButton.click();
+});
+
+// Dynamic toolbar overflow handling — move buttons into ⋮ menu when they don't fit on one line
+function adjustToolbarOverflow() {
+    const toolbar = document.querySelector("header.toolbar");
+    const moreToggleSpan = toolbar.querySelector(".toolbar-more");
+    if (!toolbar || !moreToggleSpan) return;
+
+    // Movable entries in priority order (first = hide first when overflow).
+    // Each entry has a main `btn` (span) and one or more dropdown `items`.
+    const movable = [
+        { btn: toolbar.querySelector(".button-edit-print"), items: [morePrint] },
+        { btn: toolbar.querySelector(".button-edit-gdownload"), items: [moreSync] },
+        { btn: toolbar.querySelector(".button-edit-metadata"), items: [moreMetadata] },
+        { btn: toolbar.querySelector(".button-edit-save"), items: [moreSave] },
+        { btn: toolbar.querySelector(".button-preview-toggle"), items: [morePreview] },
+        { btn: toolbar.querySelector(".button-edit-only"), items: [moreTransposeDown, moreTransposeUp] },
+    ].filter(m => m.btn && m.items.every(Boolean));
+
+    // Reset: show all main buttons, hide all dropdown items, hide ⋮
+    moreToggleSpan.classList.remove("shown");
+    movable.forEach(({ btn, items }) => {
+        btn.classList.remove("in-overflow-menu");
+        items.forEach(it => it.hidden = true);
+    });
+
+    // Skip overflow logic in read-only mode (toolbar has very few items)
+    if (document.body.classList.contains("read-only")) return;
+
+    // Only consider real layout items — skip zero-height spacers like the elastic span
+    function visibleItems() {
+        return Array.from(toolbar.children).filter(el => el.offsetHeight > 0);
+    }
+    function hasWrap() {
+        void toolbar.offsetHeight; // force layout
+        const its = visibleItems();
+        if (its.length === 0) return false;
+        const firstTop = its[0].offsetTop;
+        return its.some(el => el.offsetTop > firstTop);
+    }
+
+    if (!hasWrap()) return;
+
+    // Show ⋮ first (it'll take some space)
+    moreToggleSpan.classList.add("shown");
+
+    // Hide entries one-by-one until the toolbar fits on one line
+    for (const { btn, items } of movable) {
+        if (!hasWrap()) break;
+        btn.classList.add("in-overflow-menu");
+        items.forEach(it => it.hidden = false);
+    }
+
+    // If nothing got moved (still wraps even with all candidates hidden), keep ⋮ hidden
+    const anyHidden = movable.some(({ btn }) => btn.classList.contains("in-overflow-menu"));
+    if (!anyHidden) {
+        moreToggleSpan.classList.remove("shown");
+    }
+}
+
+var _toolbarAdjustTimer = null;
+function scheduleToolbarAdjust() {
+    if (_toolbarAdjustTimer) return;
+    _toolbarAdjustTimer = requestAnimationFrame(() => {
+        _toolbarAdjustTimer = null;
+        adjustToolbarOverflow();
+    });
+}
+
+window.addEventListener("resize", scheduleToolbarAdjust);
+scheduleToolbarAdjust();
 
 // ============================
 //=========== MAIN ============

@@ -13,7 +13,7 @@ Demo: https://aquamarine-fox-4d579a.netlify.app
 ```bash
 npx http-server .
 # Or with Netlify Functions support:
-netlify dev
+npx netlify dev
 ```
 
 No build, transpilation, or bundling. Edit files directly and reload. Use `netlify dev` to test the CORS proxy function locally.
