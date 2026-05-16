@@ -27,16 +27,14 @@ function clearPCloudCredentials() {
     localStorage.removeItem("pcloud_foldername");
 }
 
-function getSession() {
-    const auth = localStorage.getItem("pcloud_auth");
-    const apiHost = localStorage.getItem("pcloud_apihost");
-    if (auth && apiHost) return { auth, apiHost };
-    return null;
+function getApiHost() {
+    return localStorage.getItem("pcloud_apihost");
 }
 
-function saveSession(auth, apiHost) {
-    localStorage.setItem("pcloud_auth", auth);
+function saveApiHost(apiHost) {
     localStorage.setItem("pcloud_apihost", apiHost);
+    // Stale token from the previous auth scheme, no longer used.
+    localStorage.removeItem("pcloud_auth");
 }
 
 function getSyncFolder() {
@@ -55,43 +53,104 @@ function saveSyncFolder(folderId, folderName) {
 // ---- pCloud API ------------
 // ----------------------------
 
-async function pcloudFetch(action, params = {}) {
-    const session = getSession();
-    const body = { action, ...params };
-    if (session) {
-        body.auth = body.auth || session.auth;
-        body.apiHost = body.apiHost || session.apiHost;
+// pCloud digest auth: we hash the password with a per-request server nonce
+// (digest) and send {username, digest, passworddigest} instead of the password
+// itself. The digest is valid for ~30s and reusable, so we cache it in memory
+// across calls — the password never leaves the browser after this.
+const PCLOUD_API_US = "https://api.pcloud.com";
+const PCLOUD_API_EU = "https://eapi.pcloud.com";
+const DIGEST_TTL_MS = 20_000;
+let digestCache = null; // { apiHost, username, pwdMarker, digest, passworddigest, expiresAt }
+
+async function sha1Hex(str) {
+    const buf = new TextEncoder().encode(str);
+    const hash = await crypto.subtle.digest("SHA-1", buf);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function fetchDigest(apiHost) {
+    const r = await fetch(apiHost + "/getdigest");
+    const d = await r.json();
+    if (d.result !== 0 || !d.digest) throw new Error(d.error || "getdigest failed");
+    return d.digest;
+}
+
+async function getAuthParams(apiHost, username, password) {
+    const pwdMarker = await sha1Hex(password);
+    if (
+        digestCache &&
+        digestCache.apiHost === apiHost &&
+        digestCache.username === username &&
+        digestCache.pwdMarker === pwdMarker &&
+        digestCache.expiresAt > Date.now()
+    ) {
+        return { username, digest: digestCache.digest, passworddigest: digestCache.passworddigest };
     }
+    const digest = await fetchDigest(apiHost);
+    const usernameSha = await sha1Hex(username.toLowerCase());
+    const passworddigest = await sha1Hex(password + usernameSha + digest);
+    digestCache = { apiHost, username, pwdMarker, digest, passworddigest, expiresAt: Date.now() + DIGEST_TTL_MS };
+    return { username, digest, passworddigest };
+}
+
+function invalidateDigestCache() {
+    digestCache = null;
+}
+
+async function pcloudFetch(action, params = {}) {
+    const creds = getPCloudCredentials();
+    if (!creds) throw new Error("No pCloud credentials");
+    const apiHost = params.apiHost || getApiHost();
+    if (!apiHost) throw new Error("No pCloud apiHost");
+
+    const auth = await getAuthParams(apiHost, creds.username, creds.password);
+    const body = { action, apiHost, ...auth, ...params };
     const response = await fetch(PCLOUD_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    if (!response.ok) {
+        // Stale cached digest, or a transient pCloud-side rejection — drop the
+        // cache so the next call recomputes.
+        invalidateDigestCache();
+        throw new Error(data.error || `HTTP ${response.status}`);
+    }
     return data;
 }
 
 async function pcloudLogin(username, password) {
-    const data = await pcloudFetch("login", { username, password });
-    saveSession(data.auth, data.apiHost);
-    return data;
+    // Try US then EU. The region that accepts the digest auth is the user's.
+    for (const apiHost of [PCLOUD_API_US, PCLOUD_API_EU]) {
+        try {
+            invalidateDigestCache();
+            const auth = await getAuthParams(apiHost, username, password);
+            const r = await fetch(PCLOUD_API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "userinfo", apiHost, ...auth }),
+            });
+            if (!r.ok) continue;
+            const data = await r.json();
+            if (data.result === 0) {
+                saveApiHost(apiHost);
+                return { apiHost };
+            }
+        } catch {
+            // try next region
+        }
+    }
+    invalidateDigestCache();
+    throw new Error("Login failed");
 }
 
 export async function ensurePCloudAuth() {
-    const session = getSession();
-    if (session) {
-        // Test if session is still valid
-        try {
-            await pcloudFetch("listfolder", { folderid: 0 });
-            return;
-        } catch {
-            // Session expired, re-login
-        }
-    }
     const creds = getPCloudCredentials();
     if (!creds) throw new Error("No pCloud credentials");
-    await pcloudLogin(creds.username, creds.password);
+    if (!getApiHost()) {
+        await pcloudLogin(creds.username, creds.password);
+    }
 }
 
 async function ensureSyncFolder() {

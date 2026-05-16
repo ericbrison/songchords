@@ -1,108 +1,36 @@
 const PCLOUD_API_US = "https://api.pcloud.com";
 const PCLOUD_API_EU = "https://eapi.pcloud.com";
+const VALID_HOSTS = new Set([PCLOUD_API_US, PCLOUD_API_EU]);
 
-async function pcloudRequest(apiHost, method, params = {}) {
+// The proxy is now a thin forwarder. The client computes the pCloud digest
+// auth params (username, digest, passworddigest) using Web Crypto and caches
+// the digest in browser memory, so the proxy never sees the password.
+//
+// For "login" the client tries both regions itself and sends apiHost back.
+
+async function pcloudGet(apiHost, method, params = {}) {
   const url = new URL(`/${method}`, apiHost);
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
   }
   const res = await fetch(url.toString());
-  const data = await res.json();
-  return data;
+  return await res.json();
 }
 
-async function login(username, password) {
-  // Try US first, then EU
-  let data = await pcloudRequest(PCLOUD_API_US, "userinfo", {
-    getauth: 1,
-    logout: 1,
-    username,
-    password,
-  });
-  if (data.result === 0 && data.auth) {
-    return { auth: data.auth, apiHost: PCLOUD_API_US };
-  }
-
-  data = await pcloudRequest(PCLOUD_API_EU, "userinfo", {
-    getauth: 1,
-    logout: 1,
-    username,
-    password,
-  });
-  if (data.result === 0 && data.auth) {
-    return { auth: data.auth, apiHost: PCLOUD_API_EU };
-  }
-
-  throw new Error(data.error || "Login failed");
-}
-
-async function listFolder(auth, apiHost, folderId) {
-  const data = await pcloudRequest(apiHost, "listfolder", {
-    auth,
-    folderid: folderId,
-  });
-  if (data.result !== 0) throw new Error(data.error || "listfolder failed");
-  return data.metadata;
-}
-
-async function createFolder(auth, apiHost, parentFolderId, name) {
-  const data = await pcloudRequest(apiHost, "createfolderifnotexists", {
-    auth,
-    folderid: parentFolderId,
-    name,
-  });
-  if (data.result !== 0) throw new Error(data.error || "createfolder failed");
-  return data.metadata;
-}
-
-async function uploadFile(auth, apiHost, folderId, filename, content) {
+async function pcloudUpload(apiHost, params, content, filename) {
   const url = new URL("/uploadfile", apiHost);
-  url.searchParams.set("auth", auth);
-  url.searchParams.set("folderid", folderId);
-  url.searchParams.set("filename", filename);
-  url.searchParams.set("nopartial", "1");
-
+  for (const [k, v] of Object.entries(params)) {
+    url.searchParams.set(k, v);
+  }
   const blob = new Blob([content], { type: "text/plain" });
   const form = new FormData();
   form.append("file", blob, filename);
-
   const res = await fetch(url.toString(), { method: "POST", body: form });
-  const data = await res.json();
-  if (data.result !== 0) throw new Error(data.error || "upload failed");
-  return data.metadata[0];
-}
-
-async function updateFile(auth, apiHost, fileId, folderId, filename, content) {
-  // Delete old file then re-upload
-  const delData = await pcloudRequest(apiHost, "deletefile", {
-    auth,
-    fileid: fileId,
-  });
-  if (delData.result !== 0) throw new Error(delData.error || "deletefile failed");
-
-  return await uploadFile(auth, apiHost, folderId, filename, content);
-}
-
-async function downloadFile(auth, apiHost, fileId) {
-  const data = await pcloudRequest(apiHost, "getfilelink", {
-    auth,
-    fileid: fileId,
-  });
-  if (data.result !== 0) throw new Error(data.error || "getfilelink failed");
-
-  const host = data.hosts[0];
-  const path = data.path;
-  const fileUrl = `https://${host}${path}`;
-  const res = await fetch(fileUrl);
-  if (!res.ok) throw new Error(`Download failed: ${res.status}`);
-  const text = await res.text();
-  return text;
+  return await res.json();
 }
 
 export default async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
+  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
   let body;
   try {
@@ -111,34 +39,34 @@ export default async (req) => {
     return new Response("Invalid JSON body", { status: 400 });
   }
 
-  const { action } = body;
+  const { action, apiHost } = body;
   if (!action) return new Response("Missing action param", { status: 400 });
+  if (!apiHost || !VALID_HOSTS.has(apiHost)) {
+    return new Response("Missing or invalid apiHost", { status: 400 });
+  }
+
+  // Auth params come from the client. We never inspect or rewrite them; we just
+  // forward them to pCloud as query parameters.
+  const auth = {
+    username: body.username,
+    digest: body.digest,
+    passworddigest: body.passworddigest,
+  };
+  if (!auth.username || !auth.digest || !auth.passworddigest) {
+    return new Response("Missing auth params", { status: 400 });
+  }
 
   try {
-    if (action === "login") {
-      const { username, password } = body;
-      if (!username || !password) {
-        return new Response("Missing username or password", { status: 400 });
-      }
-      const result = await login(username, password);
-      return Response.json(result);
-    }
-
-    const { auth, apiHost } = body;
-    if (!auth || !apiHost) {
-      return new Response("Missing auth or apiHost", { status: 400 });
+    if (action === "userinfo") {
+      // Used by the client to probe whether a region accepts these credentials.
+      const data = await pcloudGet(apiHost, "userinfo", auth);
+      return Response.json(data);
     }
 
     if (action === "listfolder") {
-      const result = await listFolder(auth, apiHost, body.folderid || 0);
-      return Response.json(result);
-    }
-
-    if (action === "createfolder") {
-      const { folderid, name } = body;
-      if (!name) return new Response("Missing folder name", { status: 400 });
-      const result = await createFolder(auth, apiHost, folderid || 0, name);
-      return Response.json(result);
+      const data = await pcloudGet(apiHost, "listfolder", { ...auth, folderid: body.folderid || 0 });
+      if (data.result !== 0) throw new Error(data.error || "listfolder failed");
+      return Response.json(data.metadata);
     }
 
     if (action === "upload") {
@@ -146,8 +74,9 @@ export default async (req) => {
       if (!filename || content === undefined) {
         return new Response("Missing filename or content", { status: 400 });
       }
-      const result = await uploadFile(auth, apiHost, folderid, filename, content);
-      return Response.json(result);
+      const data = await pcloudUpload(apiHost, { ...auth, folderid, filename, nopartial: "1" }, content, filename);
+      if (data.result !== 0) throw new Error(data.error || "upload failed");
+      return Response.json(data.metadata[0]);
     }
 
     if (action === "update") {
@@ -155,15 +84,22 @@ export default async (req) => {
       if (!fileid || !filename || content === undefined) {
         return new Response("Missing fileid, filename or content", { status: 400 });
       }
-      const result = await updateFile(auth, apiHost, fileid, folderid, filename, content);
-      return Response.json(result);
+      const del = await pcloudGet(apiHost, "deletefile", { ...auth, fileid });
+      if (del.result !== 0) throw new Error(del.error || "deletefile failed");
+      const up = await pcloudUpload(apiHost, { ...auth, folderid, filename, nopartial: "1" }, content, filename);
+      if (up.result !== 0) throw new Error(up.error || "upload failed");
+      return Response.json(up.metadata[0]);
     }
 
     if (action === "download") {
       const { fileid } = body;
       if (!fileid) return new Response("Missing fileid", { status: 400 });
-      const content = await downloadFile(auth, apiHost, fileid);
-      return Response.json({ content });
+      const link = await pcloudGet(apiHost, "getfilelink", { ...auth, fileid });
+      if (link.result !== 0) throw new Error(link.error || "getfilelink failed");
+      const fileUrl = `https://${link.hosts[0]}${link.path}`;
+      const res = await fetch(fileUrl);
+      if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+      return Response.json({ content: await res.text() });
     }
 
     return new Response("Invalid action", { status: 400 });
