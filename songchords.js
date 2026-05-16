@@ -866,8 +866,8 @@ function renderSongList(filter) {
             }
         }
 
-        const nameMatches = !lowerFilter || name.toLowerCase().includes(lowerFilter);
-        const authorMatches = lowerFilter && (value.author || "").toLowerCase().includes(lowerFilter);
+        const nameMatches = !lowerFilter || normalizeForSearch(name).includes(lowerFilter);
+        const authorMatches = lowerFilter && normalizeForSearch(value.author).includes(lowerFilter);
         const groupMatches = matchingGroups.size > 0 && (cats.length > 0 ? cats : (value.group ? [value.group] : [])).some(c => matchingGroups.has(c));
 
         if (lowerFilter && !nameMatches && !authorMatches && !groupMatches) {
@@ -924,14 +924,31 @@ function renderSongList(filter) {
 }
 
 function highlightMatch(text, filter) {
-    const lowerText = text.toLowerCase();
-    const idx = lowerText.indexOf(filter);
+    const normalizedText = normalizeForSearch(text);
+    const idx = normalizedText.indexOf(filter);
     if (idx === -1) return escapeXml(text);
 
-    const before = text.substring(0, idx);
-    const match = text.substring(idx, idx + filter.length);
-    const after = text.substring(idx + filter.length);
-    return escapeXml(before) + '<span class="song-list-match">' + escapeXml(match) + '</span>' + escapeXml(after);
+    // Map normalized indices back to original-text indices, since stripping
+    // diacritics can change string length (e.g. "é" → "e").
+    let pos = 0;
+    let startOrig = -1;
+    let endOrig = -1;
+    for (let i = 0; i < text.length; i++) {
+        if (pos === idx && startOrig === -1) startOrig = i;
+        pos += normalizeForSearch(text[i]).length;
+        if (pos >= idx + filter.length && endOrig === -1) {
+            endOrig = i + 1;
+            break;
+        }
+    }
+    if (startOrig === -1) startOrig = text.length;
+    if (endOrig === -1) endOrig = text.length;
+
+    const before = text.substring(0, startOrig);
+    const match = text.substring(startOrig, endOrig);
+    const after = text.substring(endOrig);
+    const esc = s => s ? escapeXml(s) : "";
+    return esc(before) + '<span class="song-list-match">' + esc(match) + '</span>' + esc(after);
 }
 
 function openSongListPanel() {
