@@ -200,14 +200,16 @@ const FLAT_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 
 const MAJOR_KEY_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
 const MINOR_KEY_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
 
-// Major keys whose signature is written with flats (plus C, which has none).
+// Keys whose signature is written with flats (plus C and A, which have none).
 const FLAT_MAJOR_PITCHES = new Set([0, 1, 3, 5, 8, 10]);
+const FLAT_MINOR_PITCHES = new Set([0, 2, 3, 5, 7, 9, 10]);
 
 const MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11];
 const MAJOR_TRIADS = ['major', 'minor', 'minor', 'major', 'major', 'minor', 'diminished'];
 const MINOR_STEPS = [0, 2, 3, 5, 7, 8, 10];
 const MINOR_TRIADS = ['minor', 'diminished', 'major', 'minor', 'minor', 'major', 'major'];
 
+const MAJOR_PENTATONIC_STEPS = [0, 2, 4, 7, 9];
 const MINOR_PENTATONIC_STEPS = [0, 3, 5, 7, 10];
 const BLUES_STEPS = [0, 3, 5, 6, 7, 10];
 
@@ -245,8 +247,8 @@ function keyAccidental(tonicPitch, mode, forced) {
     if (forced === '#' || forced === 'b') {
         return forced;
     }
-    const majorPitch = mode === 'minor' ? (tonicPitch + 3) % 12 : tonicPitch;
-    return FLAT_MAJOR_PITCHES.has(majorPitch) ? 'b' : '#';
+    const flatKeys = mode === 'minor' ? FLAT_MINOR_PITCHES : FLAT_MAJOR_PITCHES;
+    return flatKeys.has(tonicPitch) ? 'b' : '#';
 }
 
 /** Score how well a set of chords fits one key. */
@@ -324,8 +326,41 @@ function isTwelveBarBlues(tonicPitch, chords) {
     return dominantAt(0) && dominantAt(5);
 }
 
+/**
+ * A major key borrows its minor fourth when the fourth degree is played both
+ * major and minor — the minor plagal colour of "69 Année Érotique" or
+ * "In My Life". It calls for scales the key alone does not hold.
+ */
+function borrowsMinorFourth(tonicPitch, chords) {
+    const fourthIs = (quality) => chords.some((chord) =>
+        chord.quality === quality
+        && (pitchOf(chord.root) - tonicPitch + 12) % 12 === 5);
+
+    return fourthIs('major') && fourthIs('minor');
+}
+
+/** The scales the borrowed minor fourth opens up, over the iv chord. */
+function minorFourthScales(tonicPitch, { forced }) {
+    const fourthPitch = (tonicPitch + 5) % 12;
+    // The colour: a major pentatonic a major third under the iv, whose five
+    // notes all belong to the natural minor of that iv.
+    const colourPitch = (tonicPitch + 1) % 12;
+    // Both sit outside the key, so each is written the way its own root
+    // is usually written rather than after the signature of the song.
+    const colourAccidental = keyAccidental(colourPitch, 'major', forced);
+    const fourthAccidental = keyAccidental(fourthPitch, 'minor', forced);
+
+    return [
+        buildScale(`${spellNote(colourPitch, colourAccidental)} major pentatonic`,
+            colourPitch, MAJOR_PENTATONIC_STEPS, colourAccidental),
+        buildScale(`${spellNote(fourthPitch, fourthAccidental)} minor pentatonic`,
+            fourthPitch, MINOR_PENTATONIC_STEPS, fourthAccidental),
+    ];
+}
+
 /** The scales worth soloing with over a given key. */
-function scalesFor(tonicPitch, mode, accidental, bluesy) {
+function scalesFor(tonicPitch, mode, chords, spelling) {
+    const { accidental } = spelling;
     if (mode === 'minor') {
         const tonic = MINOR_KEY_NAMES[tonicPitch];
         return [
@@ -337,12 +372,17 @@ function scalesFor(tonicPitch, mode, accidental, bluesy) {
 
     const tonic = MAJOR_KEY_NAMES[tonicPitch];
     const major = buildScale(`${tonic} major`, tonicPitch, MAJOR_STEPS, accidental);
-    if (bluesy) {
+    const borrowed = borrowsMinorFourth(tonicPitch, chords)
+        ? minorFourthScales(tonicPitch, spelling)
+        : [];
+
+    if (isTwelveBarBlues(tonicPitch, chords)) {
         // Over dominant-seventh songs the minor shapes of the tonic are the ones that work.
         return [
             major,
             buildScale(`${tonic} minor pentatonic`, tonicPitch, MINOR_PENTATONIC_STEPS, accidental),
             buildScale(`${tonic} blues`, tonicPitch, BLUES_STEPS, accidental, true),
+            ...borrowed,
         ];
     }
 
@@ -352,6 +392,7 @@ function scalesFor(tonicPitch, mode, accidental, bluesy) {
         major,
         buildScale(`${relative} minor pentatonic`, relativePitch, MINOR_PENTATONIC_STEPS, accidental),
         buildScale(`${relative} blues`, relativePitch, BLUES_STEPS, accidental, true),
+        ...borrowed,
     ];
 }
 
@@ -398,7 +439,8 @@ function rankKeys(song, options) {
                 name: `${tonic} ${key.mode}`,
                 score: key.score,
                 match: key.match,
-                scales: scalesFor(key.pitch, key.mode, accidental, isTwelveBarBlues(key.pitch, chords)),
+                scales: scalesFor(key.pitch, key.mode, chords,
+                    { accidental, forced: options.notation }),
             };
         });
 }

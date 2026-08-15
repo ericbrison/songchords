@@ -368,3 +368,47 @@ test('a section sitting on the relative minor is not a modulation', () => {
     assert.equal(bridge.key.name, 'A minor');
     assert.equal(bridge.sameAsSong, true);
 });
+
+// ---------------------------------------------------------------
+// analyzeSong - borrowed minor fourth
+// ---------------------------------------------------------------
+
+test('a borrowed minor fourth adds the two scales that fit it', () => {
+    // 69 Année Érotique: the IV turns minor under a D pedal.
+    const { candidates } = analyzeSong(song(
+        'Dmaj7  G/D  Gm/D  D',
+        'soixante neuf',
+        'Dmaj7  G/D  Gm/D  D',
+        'annee erotique',
+    ));
+
+    assert.equal(candidates[0].name, 'D major');
+    assert.deepEqual(candidates[0].scales.map((scale) => scale.name), [
+        'D major',
+        'B minor pentatonic',
+        'B blues',
+        'Eb major pentatonic',
+        'G minor pentatonic',
+    ]);
+    assert.deepEqual(candidates[0].scales[3].notes, ['Eb', 'F', 'G', 'Bb', 'C']);
+    assert.deepEqual(candidates[0].scales[4].notes, ['G', 'Bb', 'C', 'D', 'F']);
+});
+
+test('the major fourth alone leaves the scales untouched', () => {
+    const { candidates } = analyzeSong(song('D    G    A    D', 'plain and major'));
+
+    assert.equal(candidates[0].scales.length, 3);
+});
+
+test('a minor key keeps its own scales when its fourth turns major', () => {
+    // The dorian IV of a minor key is another story, and another colour.
+    const { candidates } = analyzeSong(song(
+        'Am   D    Am   Dm',
+        'dorian then aeolian',
+        'Am   D    Dm   Am',
+        'and back again',
+    ));
+
+    assert.equal(candidates[0].mode, 'minor');
+    assert.equal(candidates[0].scales.length, 3);
+});
