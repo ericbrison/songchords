@@ -354,6 +354,68 @@ main {
     line-height: 1.2;
 }
 
+.song-scales {
+    margin-bottom: 0.6rem;
+    font-size: 0.8em;
+    line-height: 1.4;
+    color: #888;
+}
+
+.song-scales-key {
+    display: inline-block;
+    padding: 0 0.45em;
+    border: solid 1px var(--chord-color);
+    border-radius: 4px;
+    color: var(--chord-color);
+    font-weight: bold;
+    cursor: help;
+}
+
+.song-scales-key::before {
+    content: "♪ ";
+    font-weight: normal;
+}
+
+.song-section-key {
+    margin-left: 0.9em;
+    font-size: 0.75em;
+    font-weight: normal;
+    color: #999;
+    white-space: nowrap;
+}
+
+.song-section-key .song-section-tonic {
+    cursor: help;
+}
+
+.song-section-key-shift {
+    color: var(--chord-color);
+    white-space: normal;
+}
+
+.song-section-key-shift .song-section-tonic {
+    display: inline-block;
+    padding: 0 0.4em;
+    border: solid 1px var(--chord-color);
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.song-scales-item::before,
+.song-scales-alt::before {
+    content: " · ";
+    color: #bbb;
+}
+
+.song-scales-item {
+    cursor: help;
+}
+
+.song-scales-alt {
+    font-style: italic;
+    cursor: help;
+}
+
 .song-render .capo {
     text-align: right;
 }

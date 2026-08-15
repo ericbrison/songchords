@@ -1,4 +1,5 @@
 import SongStorage from "./songchordsAPI.js";
+import { analyzeSong, isChordLine, isTabLine } from "./scales.js";
 
 /** @type HTMLTextAreaElement */
 const chordArea = document.getElementById("chord-area");
@@ -280,6 +281,89 @@ function noteTranspose(note, transpose = 0) {
 
 }
 
+const SECTION_LINE_RE = /^\[([^\]]+)\]$/;
+
+/**
+ * Write the key of the song and the scales one can solo with, and hand back
+ * the reading of each [Section] so that the render can label them.
+ * The analysis is made on the written chords, so it always tells the
+ * sounding key, whatever the capo.
+ */
+function writeScales(song) {
+    const analysis = analyzeSong(song, { notation: notationInput.value });
+    if (!analysis) {
+        return [];
+    }
+
+    const [key, ...alternatives] = analysis.candidates;
+    const line = document.createElement('div');
+    line.classList.add('song-scales');
+
+    // The first scale is the key itself: its notes belong to the key label.
+    const [tonicScale, ...otherScales] = key.scales;
+    const keyEl = document.createElement('span');
+    keyEl.classList.add('song-scales-key');
+    keyEl.textContent = key.name;
+    keyEl.title = tonicScale.notes.join('  ');
+    line.appendChild(keyEl);
+
+    otherScales.forEach((scale) => {
+        const scaleEl = document.createElement('span');
+        scaleEl.classList.add('song-scales-item');
+        scaleEl.textContent = scale.name;
+        scaleEl.title = scale.notes.join('  ');
+        line.appendChild(scaleEl);
+    });
+
+    if (alternatives.length > 0) {
+        const altEl = document.createElement('span');
+        altEl.classList.add('song-scales-alt');
+        altEl.textContent = `or ${alternatives
+            .map((candidate) => `${candidate.name} ${candidate.match}%`)
+            .join(', ')}`;
+        altEl.title = alternatives
+            .map((candidate) => `${candidate.name} : ${candidate.scales.map((scale) => scale.name).join(', ')}`)
+            .join('\n');
+        line.appendChild(altEl);
+    }
+
+    songRender.appendChild(line);
+    return analysis.sections;
+}
+
+/**
+ * Label a [Section] header with the key it is played in.
+ * A section that stays on the key of the song only recalls its name;
+ * one that moves away shows its own key and scales.
+ */
+function writeSectionKey(header, section) {
+    if (!header || !section.key) {
+        return;
+    }
+
+    const label = document.createElement('span');
+    label.classList.add('song-section-key');
+
+    const tonic = document.createElement('span');
+    tonic.classList.add('song-section-tonic');
+    tonic.textContent = section.key.name;
+    tonic.title = section.key.scales[0].notes.join('  ');
+    label.appendChild(tonic);
+
+    if (!section.sameAsSong) {
+        label.classList.add('song-section-key-shift');
+        section.key.scales.slice(1).forEach((scale) => {
+            const scaleEl = document.createElement('span');
+            scaleEl.classList.add('song-scales-item');
+            scaleEl.textContent = scale.name;
+            scaleEl.title = scale.notes.join('  ');
+            label.appendChild(scaleEl);
+        });
+    }
+
+    header.appendChild(label);
+}
+
 function writeCapo(capoValue) {
     const p = document.createElement('p');
     p.classList.add("capo");
@@ -450,9 +534,12 @@ export function renderSong(song) {
         window.document.title = chordNameInput.value.replace(".txt", "");
     }
 
+    const sections = writeScales(song);
+    let sectionIndex = 0;
 
     lines.forEach((line) => {
         if (isCategoryLine(line)) return;
+        const section = SECTION_LINE_RE.test(line.trim()) ? sections[sectionIndex++] : null;
         if (line.trim().length > 0) {
             if (isTextLine(line)) {
                 previousLineChord = "";
@@ -489,50 +576,14 @@ export function renderSong(song) {
             writeLineText('', previousLineSong);
             previousLineSong = false;
         }
+        if (section) {
+            writeSectionKey(songRender.lastElementChild, section);
+        }
     });
 }
 
-function isTabLine(line) {
-    if (line.match(/^[A-Ga-g][♭♯b#]?\|-/)) {
-        return true;
-    }
-    return false;
-}
-
-
 function isTextLine(line) {
     if (line.trim().match(/\(.*\)$/)) {
-        return true;
-    }
-    return false;
-}
-
-function isChordLine(line) {
-    line = line.replaceAll("maj", "Δ");
-    line = line.replaceAll("M7", "Δ");
-    line = line.replaceAll(/([A-G]).?m/g, "$1");
-    line = line.replaceAll(/([A-G])[b#]/g, "$1");
-    line = line.replaceAll(/([1-9])[b#]/g, "$1");
-    line = line.replaceAll(/sus[1-9]/g, "");
-    line = line.replaceAll(/add[1-9]/g, "");
-    line = line.replaceAll(/dim/g, "");
-    line = line.replaceAll(/aug/g, "");
-    line = line.replaceAll(/x[1-9]/g, "");
-
-    if (line.match(/^[A-Ge]\|-/)) {
-        return true;
-    }
-    if (line.match(/♪/)) {
-        return true;
-    }
-
-    if (line.match(/[a-z]/)) {
-        return false;
-    }
-    if (line.match(/[H-Z]/)) {
-        return false;
-    }
-    if (line.match(/[A-G]/)) {
         return true;
     }
     return false;

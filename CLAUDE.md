@@ -24,6 +24,7 @@ No build, transpilation, or bundling. Edit files directly and reload. Use `netli
 - `index.html` — Entry point with toolbar UI, two-panel layout (editor textarea + rendered output), and Google Drive API setup
 - `songchords.js` — All application logic: chord parsing, transposition, rendering, UI state management
 - `songchordsAPI.js` — `SongStorage` class wrapping localStorage for song and global settings persistence
+- `scales.js` — Pure music theory module (no DOM): chord parsing (`parseChord`, `extractChords`), line detection (`isChordLine`, `isTabLine`) and key detection (`analyzeSong`). Unit-tested by `scales.test.mjs` (`npm test`)
 - `songchords.css` — Styling including print layout and CSS custom properties for theming
 - `websearch.js` — Ultimate Guitar web search and tab import, using CORS proxy
 - `g/sync.js` — Google Drive API v3 integration for cloud sync of songs
@@ -68,6 +69,14 @@ Another lyric line
 ## Transposition System
 
 Two chromatic scale arrays: `gammeB` (flats: Bb, Db, Eb, Gb, Ab) and `gammeD` (sharps: A#, C#, D#, F#, G#). `noteTranspose()` finds the note's position in the scale, adds the delta plus capo offset, and wraps with modulo 12. Spacing is preserved during transposition to maintain chord-over-lyric alignment.
+
+## Key Detection
+
+`analyzeSong()` in `scales.js` scores the 24 major and minor keys against the chords of the song: diatonic chords with the expected quality score highest, common modal loans (♭VII, ♭III, ♭VI, iv, harmonic-minor V) score low but positive, foreign chords are penalised. The tonic chord counts twice, so the chord a song leans on drives the result. `renderSong()` calls `writeScales()`, which writes the winning key, the scales to solo with (major/minor, pentatonic, blues — the tonic's own minor shapes when the song is a twelve-bar blues) and the runner-up keys with their relative score, in a `.song-scales` line at the top of the render.
+
+The analysis reads the song text as written, so it always reports the **sounding** key, independent of the capo (which only shifts the displayed chords). Note spelling follows the key signature unless the ♭/♯ selector forces it.
+
+`analyzeSong()` also returns a `sections` array, one entry per `[Section]` header (`splitSections()` cuts the song on those lines; each occurrence of a repeated header is a block of its own). `writeSectionKey()` labels the header in the render: a section that stays on the key of the song only recalls it in grey, a section that moves away shows its key — boxed — with its scales. Two guards keep the labels honest: a section keeps the key of the song while that key remains a candidate at `SECTION_STICKINESS` (75%) or better, and a key sharing the same seven notes (relative major/minor) is never counted as a modulation. On a 51-song corpus this leaves ~9% of sections flagged as moving away.
 
 ## View Modes
 
